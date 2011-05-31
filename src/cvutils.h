@@ -168,6 +168,6 @@ void writeImageText(IplImage *img, char * s);
 void writeIptsToFile(char *path, std::vector<Ipoint> &ipts);
 
 //! Save the distance data to file
-void writeDptsToFile(char *path, vector<distPoint> &dpts);
+void writeDptsToFile(char *path, std::vector<distPoint> &dpts);
 
 #endif

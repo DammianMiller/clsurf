@@ -57,6 +57,7 @@
 #include "clutils.h"
 #include "utils.h"
 #include "eventlist.h"
+#include "stdio.h"
 
 #define DESC_SIZE 64
 

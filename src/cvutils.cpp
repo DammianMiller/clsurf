@@ -251,8 +251,8 @@ int drawImages(IplImage *origImg, IplImage *newImg,
     }
 
     // Set the bounds for the part of the image that we want to copy
-    rectWidth = min(cols-dstX-1, scaledCols-srcX-1);
-    rectHeight = min(rows-dstY-1, scaledRows-srcY-1);
+    rectWidth = std::min(cols-dstX-1, scaledCols-srcX-1);
+    rectHeight = std::min(rows-dstY-1, scaledRows-srcY-1);
 
     // Sanity check the output dimensions
     if(dstX+rectWidth >= cols || dstY+rectHeight >= rows ||
@@ -339,7 +339,7 @@ void drawIpoint(IplImage *img, Ipoint &ipt)
 }
 
 //! Draw all the Ipoints in the provided vector
-void drawIpoints(IplImage *img, vector<Ipoint> &ipts)
+void drawIpoints(IplImage *img, std::vector<Ipoint> &ipts)
 {
     Ipoint *ipt;
     float s, o;
@@ -374,7 +374,7 @@ void drawIpoints(IplImage *img, vector<Ipoint> &ipts)
 }
 
 //! Simply draw the features as small red dots
-void drawIpointsAsDots(IplImage *img, vector<Ipoint> &ipts)
+void drawIpointsAsDots(IplImage *img, std::vector<Ipoint> &ipts)
 {
     Ipoint *ipt;
     float s, o;
@@ -414,7 +414,7 @@ void drawPoint(IplImage *img, Ipoint &ipt)
 }
 
 //! Draw all features on the image
-void drawPoints(IplImage *img, vector<Ipoint> &ipts)
+void drawPoints(IplImage *img, std::vector<Ipoint> &ipts)
 {
     float s, o;
     int r1, c1;
@@ -432,7 +432,7 @@ void drawPoints(IplImage *img, vector<Ipoint> &ipts)
 }
 
 //! Draw descriptor windows around Ipoints in the provided vector
-void drawWindows(IplImage *img, vector<Ipoint> &ipts)
+void drawWindows(IplImage *img, std::vector<Ipoint> &ipts)
 {
     Ipoint *ipt;
     float s, o, cd, sd;
@@ -688,10 +688,10 @@ CvPoint2D32f getTranslation(std::vector<distPoint> distancePoints,
 }
 
 //! Load the SURF features from file
-void loadSurf(char *filename, vector<Ipoint> &ipts)
+void loadSurf(char *filename, std::vector<Ipoint> &ipts)
 {
     int descriptorLength, count;
-    ifstream infile(filename);
+    std::ifstream infile(filename);
 
     // clear the ipts vector first
     ipts.clear();
@@ -836,11 +836,11 @@ void writeImageText(IplImage *img, char * s)
 }
 
 //! Save the SURF features to file
-void writeIptsToFile(char *path, vector<Ipoint> &ipts)
+void writeIptsToFile(char *path, std::vector<Ipoint> &ipts)
 {
 
     char* fullpath = smartStrcat(path, "/SurfIpts.log");
-    ofstream outfile(fullpath);
+    std::ofstream outfile(fullpath);
 
     // output descriptor length
     outfile << "64\n";
@@ -868,11 +868,11 @@ void writeIptsToFile(char *path, vector<Ipoint> &ipts)
     free(fullpath);
 }
 
-void writeDptsToFile(char *path, vector<distPoint> &dpts)
+void writeDptsToFile(char *path, std::vector<distPoint> &dpts)
 {
 
     char* fullpath = smartStrcat(path, "/SurfDpts.log");
-    ofstream outfile(fullpath);
+    std::ofstream outfile(fullpath);
 
     outfile << "num points: " << dpts.size() << "\n";
 

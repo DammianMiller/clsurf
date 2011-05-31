@@ -14,10 +14,18 @@ BUILD_AMD    = 1
 
 # TODO: Replace with AMDAPPSDKROOT
 AMD_OPENCL_INSTALL_PATH := $(ATISTREAMSDKROOT)
-NVIDIA_OPENCL_INSTALL_PATH = /usr/local/cuda
+NVIDIA_OPENCL_INSTALL_PATH := /usr/local/cuda
 
-OPENCV_INC := ../OpenCV2.2/include/opencv
-OPENCV_LIB := ../OpenCV2.2/lib
+OPENCV_INC := /usr/include/opencv
+OPENCV_LIB := /usr/lib64
+USE_OPENCV_VERSION := 2.1
+
+
+OPENCV_LIB_NAMES    :=  -lopencv_imgproc -lopencv_core -lopencv_highgui -lopencv_video
+
+ifeq ($(USE_OPENCV_VERSION),2.1)
+OPENCV_LIB_NAMES    :=  -lcxcore -lcv -lcvaux -lhighgui -lml
+endif
 
 # Basic directory setup 
 SRCDIR         = src
@@ -38,8 +46,7 @@ NVIDIA_INCLUDES += -I$(NVIDIA_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 
 # Libs
 # NVIDIA installs their OpenCL library in /usr/lib64
-COMMON_LIBS := -L$(OPENCV_LIB) -lopencv_imgproc -lopencv_core \
-               -lopencv_highgui -lopencv_video 
+COMMON_LIBS := -L$(OPENCV_LIB) $(OPENCV_LIB_NAMES)
 AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL 
 NVIDIA_LIB  := -L/usr/lib64 -lOpenCL 
 
