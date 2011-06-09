@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -69,33 +69,33 @@ static const int INTERVALS = 4;
 static const float THRES = 0.0001f;
 static const int SAMPLE_STEP = 2;
 
-//! FastHessian Calculates array of hessian and co-ordinates of ipoints 
+//! FastHessian Calculates array of hessian and co-ordinates of ipoints
 /*!
     FastHessian declaration\n
-    Calculates array of hessian and co-ordinates of ipoints 
+    Calculates array of hessian and co-ordinates of ipoints
 */
 class FastHessian {
-  
+
   public:
-    
+
     //! Destructor
     ~FastHessian();
 
     //! Constructor without image
-    FastHessian(int i_height, 
+    FastHessian(int i_height,
                 int i_width,
-                const int octaves = OCTAVES, 
-                const int intervals = INTERVALS, 
-                const int sample_step = SAMPLE_STEP, 
+                const int octaves = OCTAVES,
+                const int intervals = INTERVALS,
+                const int sample_step = SAMPLE_STEP,
                 const float thres = THRES,
                 cl_kernel* kernel_list = NULL);
 
     // TODO Fix this name
     void selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos, cl_mem d_scale,
                        cl_kernel* kernel_list, int maxPoints);
-    
+
     // TODO Fix this name
-    void computeHessianDet(cl_mem d_intImage, int i_width, int i_height, 
+    void computeHessianDet(cl_mem d_intImage, int i_width, int i_height,
                            cl_kernel* kernel_list);
 
     //! Find the image features and write into vector of features
@@ -107,7 +107,7 @@ class FastHessian {
 
   private:
 
-    void createResponseMap(int octaves, int imgWidth, int 
+    void createResponseMap(int octaves, int imgWidth, int
         imgHeight, int sample_step);
 
     //! Number of Ipoints
@@ -129,7 +129,7 @@ class FastHessian {
 
     std::vector<ResponseLayer*> responseMap;
 
-    //! Number of Ipoints on GPU 
+    //! Number of Ipoints on GPU
     cl_mem d_ipt_count;
 };
 

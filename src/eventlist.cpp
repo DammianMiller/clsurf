@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -68,6 +68,8 @@
 //! Constructor
 EventList::EventList()
 {
+    current_phase_delta  = 0;
+    kernel_event_count = 0;
 
 }
 
@@ -97,7 +99,7 @@ EventList::~EventList()
 }
 
 
-char* EventList::createFilenameWithTimestamp() 
+char* EventList::createFilenameWithTimestamp()
 {
     // TODO Make this nicer
     int maxStringLen = 100;
@@ -106,7 +108,7 @@ char* EventList::createFilenameWithTimestamp()
 
     time_t rawtime;
     struct tm* timeStruct;
-    
+
     time(&rawtime);
     timeStruct = localtime(&rawtime);
 
@@ -116,7 +118,7 @@ char* EventList::createFilenameWithTimestamp()
 }
 
 //! Dump a CSV file with event information
-void EventList::dumpCSV(char* path) 
+void EventList::dumpCSV(char* path)
 {
 
     char* fullpath = NULL;
@@ -134,7 +136,7 @@ void EventList::dumpCSV(char* path)
     }
 
     // Write some information out about the environment
-    
+
     char* tmp;
     char* tmp2;
 
@@ -180,33 +182,36 @@ void EventList::dumpCSV(char* path)
 
     int kernelEventSize = this->kernel_events.size();
     for(int i = 0; i < kernelEventSize; i++) {
-        fprintf(fp, "Kernel;\t%s;\t%3.3f\n", this->kernel_events[i].second, 
+        fprintf(fp, "Kernel;\t%s;\t%3.3f\n", this->kernel_events[i].second,
             cl_computeExecTime(this->kernel_events[i].first));
     }
     int ioEventSize = this->io_events.size();
     for(int i = 0; i < ioEventSize; i++) {
-        fprintf(fp, "IO;\t%s;\t%3.3f\n", this->io_events[i].second, 
+        fprintf(fp, "IO;\t%s;\t%3.3f\n", this->io_events[i].second,
             cl_computeExecTime(this->io_events[i].first));
     }
     int compileEventSize = this->compile_events.size();
     for(int i = 0; i < compileEventSize; i++) {
-        fprintf(fp, "Compile;\t%s;\t%3.3f\n", this->compile_events[i].second, 
+        fprintf(fp, "Compile;\t%s;\t%3.3f\n", this->compile_events[i].second,
             compile_events[i].first);
     }
     int userEventSize = this->user_events.size();
     for(int i = 0; i < userEventSize; i++) {
-        fprintf(fp, "User;\t%s;\t%3.3f\n", this->user_events[i].second, 
+        fprintf(fp, "User;\t%s;\t%3.3f\n", this->user_events[i].second,
             user_events[i].first);
     }
 
+    //for(phase_tags)
     fclose(fp);
 
     free(filename);
     free(fullpath);
 }
 
+
+
 //! Add a new compile event
-void EventList::newCompileEvent(double time, char* desc) 
+void EventList::newCompileEvent(double time, char* desc)
 {
     time_tuple tuple;
 
@@ -217,14 +222,28 @@ void EventList::newCompileEvent(double time, char* desc)
 }
 
 
+void EventList::markphase(int p)
+{
+    phase_data t;
+    t.phase_id = p;
+    t.phase_start =kernel_event_count - current_phase_delta;
+    t.phase_delta = current_phase_delta;
+    printf("Phase Added %d\t %d\t %d\n", t.phase_id, t.phase_start, t.phase_delta);
+    phase_tags.push_back(t);
+    current_phase_delta = 0;
+
+}
+
 //! Add a new kernel event
-void EventList::newKernelEvent(cl_event event, char* desc) 
+void EventList::newKernelEvent(cl_event event, char* desc)
 {
     event_tuple tuple;
 
     tuple.first = event;
     tuple.second = desc;
 
+    current_phase_delta = current_phase_delta +1;
+    kernel_event_count = kernel_event_count + 1;
     this->kernel_events.push_back(tuple);
 }
 
@@ -241,7 +260,7 @@ void EventList::newIOEvent(cl_event event, char* desc)
 }
 
 //! Add a new user event
-void EventList::newUserEvent(double time, char* desc) 
+void EventList::newUserEvent(double time, char* desc)
 {
     time_tuple tuple;
 
@@ -252,7 +271,7 @@ void EventList::newUserEvent(double time, char* desc)
 }
 
 //! Print event information for all events
-void EventList::printAllEvents() 
+void EventList::printAllEvents()
 {
     this->printCompileEvents();
     this->printKernelEvents();
@@ -264,7 +283,7 @@ void EventList::printAllEvents()
 //! Print event information for all entries in compile_events vector
 void EventList::printCompileEvents()
 {
-    
+
     int numEvents = this->compile_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -278,15 +297,15 @@ void EventList::printCompileEvents()
 //! Print event information for all entries in io_events vector
 void EventList::printIOEvents()
 {
-    
+
     int numEvents = this->io_events.size();
-    cl_int status; 
+    cl_int status;
     cl_ulong timer;
 
     for(int i = 0; i < numEvents; i++)
     {
         printf("Kernel Event %d: %s\n", i, this->io_events[i].second);
- 
+
         status = clGetEventProfilingInfo(this->io_events[i].first,
             CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &timer, NULL);
         cl_errChk(status, "profiling", true);
@@ -296,7 +315,7 @@ void EventList::printIOEvents()
             CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &timer, NULL);
         cl_errChk(status, "profiling", true);
         printf("\tSUBMIT:  %lu\n", timer);
-        
+
         status = clGetEventProfilingInfo(this->io_events[i].first,
             CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &timer, NULL);
         cl_errChk(status, "profiling", true);
@@ -313,14 +332,14 @@ void EventList::printIOEvents()
 //! Print event information for all entries in kernel_events vector
 void EventList::printKernelEvents()
 {
-    
+
     int numEvents = this->kernel_events.size();
-    cl_int status; 
+    cl_int status;
     cl_ulong timer;
 
     for(int i = 0; i < numEvents; i++)
     {
-        
+
         printf("Kernel event %d: %s\n", i, kernel_events[i].second);
 
         status = clGetEventProfilingInfo(this->kernel_events[i].first,
@@ -332,7 +351,7 @@ void EventList::printKernelEvents()
             CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &timer, NULL);
         cl_errChk(status, "profiling", true);
         printf("\tSUBMIT:  %lu\n", timer);
-        
+
         status = clGetEventProfilingInfo(this->kernel_events[i].first,
             CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &timer, NULL);
         cl_errChk(status, "profiling", true);
@@ -348,7 +367,7 @@ void EventList::printKernelEvents()
 //! Print event information for all entries in user_events vector
 void EventList::printUserEvents()
 {
-    
+
     int numEvents = this->user_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -359,7 +378,7 @@ void EventList::printUserEvents()
 }
 
 //! Print execution times of all events
-void EventList::printAllExecTimes() 
+void EventList::printAllExecTimes()
 {
     this->printCompileExecTimes();
     this->printKernelExecTimes();
@@ -370,7 +389,7 @@ void EventList::printAllExecTimes()
 //! Print execution times for all entries in compile_events vector
 void EventList::printCompileExecTimes()
 {
-    
+
     int numEvents = this->compile_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -384,7 +403,7 @@ void EventList::printCompileExecTimes()
 //! Print execution times for all entries in io_events vector
 void EventList::printIOExecTimes()
 {
-    
+
     int numEvents = this->io_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -397,7 +416,7 @@ void EventList::printIOExecTimes()
 //! Print execution times for all entries in kernel_events vector
 void EventList::printKernelExecTimes()
 {
-    
+
     int numEvents = this->kernel_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -410,7 +429,7 @@ void EventList::printKernelExecTimes()
 //! Print execution times for all entries in user_events vector
 void EventList::printUserExecTimes()
 {
-    
+
     int numEvents = this->user_events.size();
 
     for(int i = 0; i < numEvents; i++)
@@ -419,3 +438,275 @@ void EventList::printUserExecTimes()
             this->user_events[i].second);
     }
 }
+
+
+
+
+
+
+//! Dump a CSV file with event information
+void EventList::dumpTraceCSV(char* path)
+{
+
+    char* fullpath = NULL;
+    FILE* fp =  NULL;
+
+    // Construct a filename based on the current time
+    char* filename = this->createFilenameWithTimestamp();
+    fullpath = smartStrcat(path, filename);
+
+    // Try to open the file for writing
+    fp = fopen(fullpath, "w");
+    if(fp == NULL) {
+        printf("Error opening %s\n", fullpath);
+        exit(-1);
+    }
+
+    // Write some information out about the environment
+
+    char* tmp;
+    char* tmp2;
+
+    // Write the device name
+    tmp = cl_getDeviceName();
+    if(isUsingImages()) {
+        tmp2 = smartStrcat(tmp, " (images)");
+    }
+    else {
+        tmp2 = smartStrcat(tmp, " (buffers)");
+    }
+    fprintf(fp, "Info;\t%s\n", tmp2);
+    free(tmp);
+    free(tmp2);
+
+    // Write the vendor name
+    tmp = cl_getDeviceVendor();
+    fprintf(fp, "Info;\t%s\n", tmp);
+    free(tmp);
+
+    // Write the driver version
+    tmp = cl_getDeviceDriverVersion();
+    fprintf(fp, "Info;\tDriver version %s\n", tmp);
+    free(tmp);
+
+    // Write the device version
+    tmp = cl_getDeviceVersion();
+    fprintf(fp, "Info;\t%s\n", tmp);
+    free(tmp);
+
+    // Write the hostname
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
+    char hostname[50];
+    if(gethostname(hostname, 50) != 0) {
+        printf("Error getting hostname\n");
+    }
+    else {
+        fprintf(fp, "Info;\tHost %s\n", hostname);
+    }
+
+    int kernelEventSize = this->kernel_events.size();
+    cl_ulong timer;
+    cl_int status;
+
+    for(int i = 0; i < kernelEventSize; i++)
+    {
+
+        fprintf(fp, "Kernel\t%s", this->kernel_events[i].second);
+        //    cl_computeExecTime(this->kernel_events[i].first));
+
+        status = clGetEventProfilingInfo(this->kernel_events[i].first,
+            CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->kernel_events[i].first,
+            CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->kernel_events[i].first,
+            CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->kernel_events[i].first,
+            CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu\n", timer);
+
+
+    }
+    int ioEventSize = this->io_events.size();
+    for(int i = 0; i < ioEventSize; i++)
+    {
+        fprintf(fp, "IO\t%s", this->io_events[i].second);
+            //,cl_computeExecTime(this->io_events[i].first));
+
+        status = clGetEventProfilingInfo(this->io_events[i].first,
+            CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->io_events[i].first,
+            CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->io_events[i].first,
+            CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu", timer);
+
+        status = clGetEventProfilingInfo(this->io_events[i].first,
+            CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &timer, NULL);
+        cl_errChk(status, "profiling", true);
+        fprintf(fp, "\t%lu\n", timer);
+
+    }
+    /*
+    int compileEventSize = this->compile_events.size();
+    for(int i = 0; i < compileEventSize; i++)
+    {
+        fprintf(fp, "Compile;\t%s;\t%3.3f\n", this->compile_events[i].second,
+            compile_events[i].first);
+    }
+    int userEventSize = this->user_events.size();
+    for(int i = 0; i < userEventSize; i++) {
+        fprintf(fp, "User;\t%s;\t%3.3f\n", this->user_events[i].second,
+            user_events[i].first);
+    }
+    */
+    fclose(fp);
+
+    free(filename);
+    free(fullpath);
+}
+
+
+void EventList::dumpTraceCSV_Phase(char* path)
+{
+    char* fullpath = NULL;
+    FILE* fp =  NULL;
+
+    // Construct a filename based on the current time
+    char* filename = this->createFilenameWithTimestamp();
+    fullpath = smartStrcat(path, filename);
+
+    // Try to open the file for writing
+    fp = fopen(fullpath, "w");
+    if(fp == NULL) {
+        printf("Error opening %s\n", fullpath);
+        exit(-1);
+    }
+
+    // Write some information out about the environment
+
+    char* tmp;
+    char* tmp2;
+
+    // Write the device name
+    tmp = cl_getDeviceName();
+    if(isUsingImages()) {
+        tmp2 = smartStrcat(tmp, " (images)");
+    }
+    else {
+        tmp2 = smartStrcat(tmp, " (buffers)");
+    }
+    fprintf(fp, "Info;\t%s\n", tmp2);
+    free(tmp);
+    free(tmp2);
+
+    // Write the vendor name
+    tmp = cl_getDeviceVendor();
+    fprintf(fp, "Info;\t%s\n", tmp);
+    free(tmp);
+
+    // Write the driver version
+    tmp = cl_getDeviceDriverVersion();
+    fprintf(fp, "Info;\tDriver version %s\n", tmp);
+    free(tmp);
+
+    // Write the device version
+    tmp = cl_getDeviceVersion();
+    fprintf(fp, "Info;\t%s\n", tmp);
+    free(tmp);
+
+    // Write the hostname
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
+    char hostname[50];
+    if(gethostname(hostname, 50) != 0) {
+        printf("Error getting hostname\n");
+    }
+    else {
+        fprintf(fp, "Info;\tHost %s\n", hostname);
+    }
+
+    int kernelEventSize = this->kernel_events.size();
+    cl_ulong timer;
+    cl_int status;
+
+
+    printf("Number of phases detected %d\n",phase_tags.size());
+    /**
+    Phase iterating Loop
+    for(int k = 0; k<phase_tags.size();k++) \n
+    { \n
+        printf("FOR %d\n",k); \n
+        for(int l = 0; l < phase_tags[k].phase_delta; l++) \n
+            printf("%d\t",phase_tags[k].phase_start + l); \n
+        printf("\n",k); \n
+        \n
+    }   \n
+    */
+    for(int k = 0; k<phase_tags.size();k++)
+    {
+        cl_ulong phase_start_stamp;
+        int phase_start_event = phase_tags[k].phase_start;
+        status = clGetEventProfilingInfo(this->kernel_events[phase_start_event].first,
+                CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &phase_start_stamp, NULL);
+        cl_errChk(status, "profiling", true);
+
+        for(int l = 0; l < phase_tags[k].phase_delta; l++)
+        {
+            int i = phase_tags[k].phase_start + l;
+            fprintf(fp, "Kernel\t%s", this->kernel_events[i].second);
+            //    cl_computeExecTime(this->kernel_events[i].first));
+
+            status = clGetEventProfilingInfo(this->kernel_events[i].first,
+                CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &timer, NULL);
+            cl_errChk(status, "profiling", true);
+            fprintf(fp, "\t%lu", timer - phase_start_stamp);
+
+            status = clGetEventProfilingInfo(this->kernel_events[i].first,
+                CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &timer, NULL);
+            cl_errChk(status, "profiling", true);
+            fprintf(fp, "\t%lu", timer- phase_start_stamp);
+
+            status = clGetEventProfilingInfo(this->kernel_events[i].first,
+                CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &timer, NULL);
+            cl_errChk(status, "profiling", true);
+            fprintf(fp, "\t%lu", timer- phase_start_stamp);
+
+            status = clGetEventProfilingInfo(this->kernel_events[i].first,
+                CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &timer, NULL);
+            cl_errChk(status, "profiling", true);
+            fprintf(fp, "\t%lu\n", timer- phase_start_stamp);
+
+        }
+    }
+
+
+
+    fclose(fp);
+
+    free(filename);
+    free(fullpath);
+}
+
+

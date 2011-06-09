@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -61,7 +61,7 @@
 
 #define DESC_SIZE 64
 
-// TODO Get rid of these arrays (i and j).  Have the values computed 
+// TODO Get rid of these arrays (i and j).  Have the values computed
 //      dynamically within the kernel
 const int Surf::j[] = {-12, -7, -2, 3,
                        -12, -7, -2, 3,
@@ -86,20 +86,20 @@ const float Surf::gauss25[] = {
 
 
 //! Constructor
-Surf::Surf(int initialPoints, int i_height, int i_width, int octaves, 
+Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
            int intervals, int sample_step, float threshold,
            cl_kernel* kernel_list)
            : kernel_list(kernel_list)
 {
 
-    this->fh = new FastHessian(i_height, i_width, octaves, 
+    this->fh = new FastHessian(i_height, i_width, octaves,
         intervals, sample_step, threshold, kernel_list);
 
     // Once we know the size of the image, successive frames should stay
     // the same size, so we can just allocate the space once for the integral
     // image and intermediate data
-    if(isUsingImages()) 
-    {   
+    if(isUsingImages())
+    {
         this->d_intImage = cl_allocImage(i_height, i_width, 'f');
         this->d_tmpIntImage = cl_allocImage(i_height, i_width, 'f');
         this->d_tmpIntImageT1 = cl_allocImage(i_width, i_height, 'f');
@@ -125,7 +125,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
     this->d_scale = cl_allocBuffer(initialPoints * sizeof(float));
     this->d_pixPos = cl_allocBuffer(initialPoints * sizeof(float2));
     this->d_laplacian = cl_allocBuffer(initialPoints * sizeof(int));
-    
+
     // These buffers used to wait for the number of actual ipts to be known
     // before being allocated, instead now we'll only allocate them once
     // so that we can take advantage of optimized data transfers and reallocate
@@ -225,20 +225,20 @@ void Surf::computeIntegralImage(IplImage* source)
 
         // If it is possible to use the vector scan (scan4) use
         // it, otherwise, use the regular scan
-        if(cl_deviceIsAMD() && width % 4 == 0 && height % 4 == 0) 
+        if(cl_deviceIsAMD() && width % 4 == 0 && height % 4 == 0)
         {
             // NOTE Change this to KERNEL_SCAN when running verification code.
             //      The reference code doesn't use a vector type and
             //      scan4 produces a slightly different integral image
             scan_kernel = this->kernel_list[KERNEL_SCAN4];
         }
-        else 
+        else
         {
             scan_kernel = this->kernel_list[KERNEL_SCAN];
         }
         transpose_kernel = this->kernel_list[KERNEL_TRANSPOSE];
     }
-    
+
 
     // -----------------------------------------------------------------
     // Step 1: Perform integral summation on the rows
@@ -248,7 +248,7 @@ void Surf::computeIntegralImage(IplImage* source)
     size_t globalWorkSize1[2]={64, height};
 
     cl_setKernelArg(scan_kernel, 0, sizeof(cl_mem), (void *)&(this->d_intImage));
-    cl_setKernelArg(scan_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImage)); 
+    cl_setKernelArg(scan_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImage));
     cl_setKernelArg(scan_kernel, 2, sizeof(int), (void *)&height);
     cl_setKernelArg(scan_kernel, 3, sizeof(int), (void *)&width);
 
@@ -261,8 +261,8 @@ void Surf::computeIntegralImage(IplImage* source)
     size_t localWorkSize2[]={16, 16};
     size_t globalWorkSize2[]={roundUp(width,16), roundUp(height,16)};
 
-    cl_setKernelArg(transpose_kernel, 0, sizeof(cl_mem), (void *)&(this->d_tmpIntImage));  
-    cl_setKernelArg(transpose_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT1)); 
+    cl_setKernelArg(transpose_kernel, 0, sizeof(cl_mem), (void *)&(this->d_tmpIntImage));
+    cl_setKernelArg(transpose_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT1));
     cl_setKernelArg(transpose_kernel, 2, sizeof(int), (void *)&height);
     cl_setKernelArg(transpose_kernel, 3, sizeof(int), (void *)&width);
 
@@ -270,7 +270,7 @@ void Surf::computeIntegralImage(IplImage* source)
 
     // -----------------------------------------------------------------
     // Step 3: Run integral summation on the rows again (same as columns
-    //         integral since we've transposed). 
+    //         integral since we've transposed).
     // -----------------------------------------------------------------
 
     int heightT = width;
@@ -280,7 +280,7 @@ void Surf::computeIntegralImage(IplImage* source)
     size_t globalWorkSize3[2]={64, heightT};
 
     cl_setKernelArg(scan_kernel, 0, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT1));
-    cl_setKernelArg(scan_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT2)); 
+    cl_setKernelArg(scan_kernel, 1, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT2));
     cl_setKernelArg(scan_kernel, 2, sizeof(int), (void *)&heightT);
     cl_setKernelArg(scan_kernel, 3, sizeof(int), (void *)&widthT);
 
@@ -293,7 +293,7 @@ void Surf::computeIntegralImage(IplImage* source)
     size_t localWorkSize4[]={16, 16};
     size_t globalWorkSize4[]={roundUp(widthT,16), roundUp(heightT,16)};
 
-    cl_setKernelArg(transpose_kernel, 0, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT2)); 
+    cl_setKernelArg(transpose_kernel, 0, sizeof(cl_mem), (void *)&(this->d_tmpIntImageT2));
     cl_setKernelArg(transpose_kernel, 1, sizeof(cl_mem), (void *)&(this->d_intImage));
     cl_setKernelArg(transpose_kernel, 2, sizeof(int), (void *)&heightT);
     cl_setKernelArg(transpose_kernel, 3, sizeof(int), (void *)&widthT);
@@ -336,7 +336,7 @@ void Surf::createDescriptors(int i_width, int i_height)
     cl_setKernelArg(surf64Descriptor_kernel, 9, sizeof(cl_mem), (void*)&(this->d_i));
 
     cl_executeKernel(surf64Descriptor_kernel, 2, globalWorkSizeSurf64,
-        localWorkSizeSurf64, "CreateDescriptors"); 
+        localWorkSizeSurf64, "CreateDescriptors");
 
     cl_kernel normSurf64_kernel = kernel_list[KERNEL_NORM_DESC];
 
@@ -348,9 +348,9 @@ void Surf::createDescriptors(int i_width, int i_height)
 
     // Execute the descriptor normalization kernel
     cl_executeKernel(normSurf64_kernel, 1, globallWorkSizeNorm64, localWorkSizeNorm64,
-        "NormalizeDescriptors"); 
+        "NormalizeDescriptors");
 
-} 
+}
 
 
 //! Calculate orientation for all ipoints
@@ -364,7 +364,7 @@ void Surf::getOrientations(int i_width, int i_height)
 {
 
     cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
-    cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];  
+    cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];
 
     size_t localWorkSize1[] = {169};
     size_t globalWorkSize1[] = {this->numIpts*169};
@@ -383,7 +383,7 @@ void Surf::getOrientations(int i_width, int i_height)
     cl_setKernelArg(getOrientation, 7, sizeof(cl_mem), (void *)&(this->d_res));
 
     // Execute the kernel
-    cl_executeKernel(getOrientation, 1, globalWorkSize1, localWorkSize1, 
+    cl_executeKernel(getOrientation, 1, globalWorkSize1, localWorkSize1,
         "GetOrientations");
 
     cl_setKernelArg(getOrientation2, 0, sizeof(cl_mem), (void *)&(this->d_orientation));
@@ -444,7 +444,7 @@ void Surf::reallocateIptBuffers() {
 
 //! This function gets called each time SURF is run on a new frame.  It prevents
 //! having to create and destroy the object each time (lots of OpenCL overhead)
-void Surf::reset() 
+void Surf::reset()
 {
     this->fh->reset();
 }
@@ -458,7 +458,7 @@ IpVec* Surf::retrieveDescriptors()
 {
     IpVec* ipts = new IpVec();
 
-    if(this->numIpts == 0) 
+    if(this->numIpts == 0)
     {
         return ipts;
     }
@@ -466,32 +466,32 @@ IpVec* Surf::retrieveDescriptors()
     // Copy back the output data
 
 #ifdef OPTIMIZED_TRANSFERS
-    // We're using pinned memory for the transfers.  The data is 
+    // We're using pinned memory for the transfers.  The data is
     // copied back to pinned memory and then must be mapped before
     // it's usable on the host
 
     // Copy back Laplacian data
-    this->laplacian = (int*)cl_copyAndMapBuffer(this->h_laplacian, 
+    this->laplacian = (int*)cl_copyAndMapBuffer(this->h_laplacian,
         this->d_laplacian, this->numIpts * sizeof(int));
 
     // Copy back scale data
-    this->scale = (float*)cl_copyAndMapBuffer(this->h_scale, 
+    this->scale = (float*)cl_copyAndMapBuffer(this->h_scale,
         this->d_scale, this->numIpts * sizeof(float));
-    
+
     // Copy back pixel positions
-    this->pixPos = (float2*)cl_copyAndMapBuffer(this->h_pixPos, 
+    this->pixPos = (float2*)cl_copyAndMapBuffer(this->h_pixPos,
         this->d_pixPos, this->numIpts * sizeof(float2));
 
     // Copy back descriptors
-    this->desc = (float*)cl_copyAndMapBuffer(this->h_desc, 
+    this->desc = (float*)cl_copyAndMapBuffer(this->h_desc,
         this->d_desc, this->numIpts * DESC_SIZE* sizeof(float));
 
     // Copy back orientation data
-    this->orientation = (float*)cl_copyAndMapBuffer(this->h_orientation, 
+    this->orientation = (float*)cl_copyAndMapBuffer(this->h_orientation,
         this->d_orientation, this->numIpts * sizeof(float));
 #else
     // Copy back Laplacian information
-    cl_copyBufferToHost(this->laplacian, this->d_laplacian, 
+    cl_copyBufferToHost(this->laplacian, this->d_laplacian,
         (this->numIpts) * sizeof(int), CL_FALSE);
 
     // Copy back scale data
@@ -499,22 +499,22 @@ IpVec* Surf::retrieveDescriptors()
         (this->numIpts)*sizeof(float), CL_FALSE);
 
     // Copy back pixel positions
-    cl_copyBufferToHost(this->pixPos, this->d_pixPos, 
-        (this->numIpts) * sizeof(float2), CL_FALSE);   
+    cl_copyBufferToHost(this->pixPos, this->d_pixPos,
+        (this->numIpts) * sizeof(float2), CL_FALSE);
 
     // Copy back descriptors
-    cl_copyBufferToHost(this->desc, this->d_desc, 
+    cl_copyBufferToHost(this->desc, this->d_desc,
         (this->numIpts)*DESC_SIZE*sizeof(float), CL_FALSE);
-    
+
     // Copy back orientation data
-    cl_copyBufferToHost(this->orientation, this->d_orientation, 
+    cl_copyBufferToHost(this->orientation, this->d_orientation,
         (this->numIpts)*sizeof(float), CL_TRUE);
-#endif  
+#endif
 
     // Parse the data into Ipoint structures
     for(int i= 0;i<(this->numIpts);i++)
-    {		
-        Ipoint ipt;		
+    {
+        Ipoint ipt;
         ipt.x = pixPos[i].x;
         ipt.y = pixPos[i].y;
         ipt.scale = scale[i];
@@ -546,14 +546,14 @@ IpVec* Surf::retrieveDescriptors()
     \param upright Switch for future functionality of upright surf
     \param fh FastHessian object
 */
-void Surf::run(IplImage* img, bool upright) 
+void Surf::run(IplImage* img, bool upright)
 {
 
     if (upright)
     {
         // Extract upright (i.e. not rotation invariant) descriptors
         printf("Upright surf not supported\n");
-        exit(1);		
+        exit(1);
     }
 
     // Perform the scan sum of the image (populates d_intImage)
@@ -562,7 +562,7 @@ void Surf::run(IplImage* img, bool upright)
 
     // Determines the points of interest
     // GPU kernels: init_det, hessian_det (x12), non_max_suppression (x3)
-    // GPU mem transfer: copies back the number of ipoints 
+    // GPU mem transfer: copies back the number of ipoints
     this->numIpts = this->fh->getIpoints(img, this->d_intImage, this->d_laplacian,
                         this->d_pixPos, this->d_scale, this->maxIpts);
 
@@ -577,13 +577,13 @@ void Surf::run(IplImage* img, bool upright)
         this->reallocateIptBuffers();
         // XXX This was breaking sometimes
         this->fh->reset();
-        this->numIpts = fh->getIpoints(img, this->d_intImage, 
+        this->numIpts = fh->getIpoints(img, this->d_intImage,
             this->d_laplacian, this->d_pixPos, this->d_scale, this->maxIpts);
     }
 
-    printf("There were %d interest points\n", this->numIpts);    
+    //printf("There were %d interest points\n", this->numIpts);
 
-    // Main SURF-64 loop assigns orientations and gets descriptors    
+    // Main SURF-64 loop assigns orientations and gets descriptors
     if(this->numIpts==0) return;
 
     // GPU kernel: getOrientation1 (1x), getOrientation2 (1x)

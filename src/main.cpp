@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -78,13 +78,13 @@ int mainBenchmark(cl_kernel* kernel_list,char* inputImage, char* eventsPath,
               char* iptsPath, bool verifyResults);
 
 // Signature for reference implementation of SURF
-int surfRef(char* imagePath, int octaves, int intervals, int step, 
+int surfRef(char* imagePath, int octaves, int intervals, int step,
               float threshold, void** iptsPtr);
 
 /**-------------------------------------------------------
  // Run the executable with no command line arguments to
  // see a complete list of options
- // 
+ //
  // NOTE this program will crash with very small images
 -------------------------------------------------------
 */
@@ -99,16 +99,16 @@ int main(int argc, char **argv)
 
     // The procedure number determines what the remaining inputs should be
     int procedure = atoi(argv[1]);
-    
+
     // Optional arguments
-    char* inputPath = NULL;      // Path to input file 
+    char* inputPath = NULL;      // Path to input file
     char* iptsLogPath = NULL;    // Directory to store Ipts data
     char* eventsLogPath = NULL;  // Directory to store events
     char  devicePref = '\0';     // Device preference
     bool  verifyResults = false;
 
     // Check remaining arguments here
-    parseArguments(argc, argv, &inputPath, &eventsLogPath, &iptsLogPath, 
+    parseArguments(argc, argv, &inputPath, &eventsLogPath, &iptsLogPath,
         &devicePref, &verifyResults);
 
     // If parameters were supplied, sanity check them
@@ -172,15 +172,15 @@ int main(int argc, char **argv)
 
     // Initialize OpenCL
     cl_init(devicePref);
-    
+
 	// NVIDIA's OpenCL cuurently doesn't support single-channel images
-	if(cl_deviceIsNVIDIA()) 
+	if(cl_deviceIsNVIDIA())
 	{
 		setUsingImages(false);
 	}
-    
+
     // Print a message saying whether or not images are being used
-    if(isUsingImages()) 
+    if(isUsingImages())
     {
         printf("Using OpenCL images\n\n");
     }
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 
     // Compile kernels off the critical path
     cl_kernel* kernel_list;
-	if(isUsingImages()) 
+	if(isUsingImages())
 	{
 		kernel_list = cl_precompileKernels("-DIMAGES_SUPPORTED");
 	}
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
     int retval = 0;
     switch(procedure) {
     case 1:
-        retval = mainImage(kernel_list, inputPath, eventsLogPath, iptsLogPath, 
+        retval = mainImage(kernel_list, inputPath, eventsLogPath, iptsLogPath,
                      verifyResults);
         break;
     case 2:
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
                      iptsLogPath);
         break;
     case 6:
-        retval = mainBenchmark(kernel_list, inputPath, eventsLogPath, 
+        retval = mainBenchmark(kernel_list, inputPath, eventsLogPath,
                      iptsLogPath, verifyResults);
         break;
     default:
@@ -229,10 +229,10 @@ int main(int argc, char **argv)
 //--------------------------------------------------------
 //  Procedure == 1: Image File
 //--------------------------------------------------------
-int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath, 
+int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
               char* iptsPath, bool verifyResults)
 {
-    
+
     printf("Running an Image: %s\n", inputImage);
 
     // Set retval to negative if any errors occur
@@ -256,7 +256,7 @@ int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
     unsigned int initialIpts = 1000;
 
     // Create Surf Object
-    Surf* surf = new Surf(initialIpts, img->height, img->width, octaves, 
+    Surf* surf = new Surf(initialIpts, img->height, img->width, octaves,
         intervals, sample_step, threshold, kernel_list);
 
     // Start timing (OpenCL only)
@@ -296,7 +296,7 @@ int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
 #ifdef _WIN32
         // Get Ipoints from the reference algorithm
         Ipoint* refIptsPtr;
-        int numRefIpts = surfRef(inputImage, octaves, intervals, 
+        int numRefIpts = surfRef(inputImage, octaves, intervals,
                                  sample_step, threshold, (void**)&refIptsPtr);
 
         IpVec* refIpts = new IpVec(refIptsPtr, refIptsPtr+numRefIpts);
@@ -329,7 +329,7 @@ int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
 
     // Display the output image
     showImage(img);
-    
+
     printf("Done with SURF Imaging\n");
 
     // Clean up
@@ -354,7 +354,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     // Open the video or webcam
     CvCapture* capture;
     if(inputImage == NULL)
-    {	
+    {
         // Using the webcam
         capture = cvCaptureFromCAM(CV_CAP_ANY);
         if(!capture) {
@@ -402,13 +402,14 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     firstWidth = frame->width;
 
     // Create Surf Descriptor Object
-    Surf* surf = new Surf(initialIpts, frame->height, frame->width, octaves, 
+    Surf* surf = new Surf(initialIpts, frame->height, frame->width, octaves,
         intervals, sample_step, threshold, kernel_list);
 
     // ---------- Main capture loop -----------
 
     // Limit the loop to 1000 iterations
     int limit = 1000;
+    int frame_id = 0;
     while(limit--)
     {
         // Sanity check frame sizes
@@ -431,7 +432,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
 
         // Draw the detected points
         drawIpoints(frame, *ipts);
-        
+
         // Draw the FPS figure
         drawFPS(frame);
 
@@ -456,13 +457,16 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
             printf("No Frames Available\n");
             break;
         }
+        markphase(frame_id);
+        frame_id=frame_id+1;
+
     }
 
     // Write events to file if path was supplied
     if(eventsPath != NULL) {
         cl_writeEventsToFile(eventsPath);
     }
-    // Clean up 
+    // Clean up
     delete surf;
     cvReleaseCapture(&capture);
     cvDestroyAllWindows();
@@ -475,14 +479,14 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
 //--------------------------------------------------------
 //  Procedure == 3: Video Stabilization
 //--------------------------------------------------------
-int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* iptsPath) 
+int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* iptsPath)
 {
     printf("Running Video Stabilization\n");
 
     // Open the video or webcam
     CvCapture* capture;
     if(inputImage == NULL)
-    {	
+    {
         // Using the webcam
         capture = cvCaptureFromCAM(CV_CAP_ANY);
         if(!capture) {
@@ -510,13 +514,13 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
     // (cannot free the frame, cannot use pointer assignment to
     // store it)
     origFrame = cvQueryFrame(capture);
-    frame = cvCreateImage(cvSize((int)(origFrame->width*scale), 
+    frame = cvCreateImage(cvSize((int)(origFrame->width*scale),
         (int)(origFrame->height*scale)), origFrame->depth, origFrame->nChannels);
     cvResize(origFrame, frame);
 
     std::vector<distPoint>* distancePoints;
 
-    float shakeThreshold=1000;
+    float shakeThreshold=10;
     printf("Shake threshold: %f\n", shakeThreshold);
 
     // Initialize some SURF parameters
@@ -527,7 +531,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
     unsigned int initialIpts = 1000;
 
     // Create Surf Descriptor Object
-    Surf* surf = new Surf(initialIpts, frame->height, frame->width, octaves, 
+    Surf* surf = new Surf(initialIpts, frame->height, frame->width, octaves,
         intervals, sample_step, threshold, kernel_list);
 
     IpVec* firstIpts;
@@ -536,12 +540,12 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
 
     surf->run(frame, false);
 
-    // Set the previous frame to the first frame for the first 
+    // Set the previous frame to the first frame for the first
     // iteration of the loop
     firstIpts = surf->retrieveDescriptors();
     *prevIpts = *firstIpts;
     float** distTable = computeDistanceTable(firstIpts);
-    
+
     // Store this frame to display
     firstFrame = cvCloneImage(frame);
     drawIpoints(firstFrame, *firstIpts);
@@ -554,7 +558,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
     while(true)
     {
         printf("Frame Count:%d\n",frameCount);
-       
+
         // Grab the next frame from the capture source
         origFrame = cvQueryFrame(capture);
         if(origFrame == NULL) {
@@ -565,7 +569,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
 
         // Run SURF on the next frame
         surf->run(frame, false);
-        
+
         // Get the ipoints
         nextIpts = surf->retrieveDescriptors();
 
@@ -576,7 +580,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
         // Draw the images on the screen
         drawIpoints(frame, *nextIpts);
         drawImages(firstFrame, frame, distancePoints, shakeThreshold, distTable);
-        
+
         surf->reset();
 
         delete prevIpts;
@@ -584,15 +588,15 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
 
         delete distancePoints;
 
-        int waitKey = cvWaitKey(1) & 255;
+        int waitKey = cvWaitKey(2) & 255;
         if(waitKey == 27) {
-            
+
             // If ESC key pressed exit loop
             break;
         }
-        else if(waitKey == 32) {         
+        else if(waitKey == 32) {
             // If SPACEBAR is pressed, set new reference image
-            
+
             // Cleanup from the old reference image
             freeDistanceTable(distTable, firstIpts->size());
             delete firstIpts;
@@ -604,7 +608,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
 
             // Compute a new distance table
             distTable = computeDistanceTable(firstIpts);
-            
+
             // Copy the latest image and draw the Ipoints on it
             firstFrame = cvCloneImage(frame);
             drawIpoints(firstFrame, *firstIpts);
@@ -623,7 +627,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
     if(eventsPath != NULL) {
         cl_writeEventsToFile(eventsPath);
     }
-    // Clean up 
+    // Clean up
     if(nextIpts != NULL) {
         delete nextIpts;
     }
@@ -644,7 +648,7 @@ int mainStabilization(cl_kernel* kernel_list, char* inputImage, char* eventsPath
 //--------------------------------------------------------
 //  Procedure == 6: Benchmark
 //--------------------------------------------------------
-int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath, 
+int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
                   char* iptsPath, bool verifyResults)
 {
     printf("Running benchmark on %s\n", inputImage);
@@ -669,7 +673,7 @@ int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
     cl_disableEvents();
 
     // Create Surf Descriptor Object
-    Surf* surf = new Surf(initialIpts, img->height, img->width, octaves, 
+    Surf* surf = new Surf(initialIpts, img->height, img->width, octaves,
         intervals, sample_step, threshold, kernel_list);
 
     // Since we're benchmarking, perform a warm-up run
@@ -689,13 +693,13 @@ int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
     // Used to time execution
     cl_time totalStart, totalEnd;
     cl_time surfStart, surfEnd;
-    cl_time copyStart, copyEnd; 
+    cl_time copyStart, copyEnd;
 
-    // Start overall timing 
+    // Start overall timing
     cl_getTime(&totalStart);
-    // Start timing SURF 
+    // Start timing SURF
     surfStart = totalStart;
-     
+
     // This is the main SURF algorithm.  It detects and describes
     // interesting points in the image.  When the function completes
     // the descriptors are still on the device.
@@ -734,7 +738,7 @@ int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
 #ifdef _WIN32
         // Get Ipoints from the reference algorithm
         Ipoint* refIptsPtr;
-        int numRefIpts = surfRef(inputImage, octaves, intervals, 
+        int numRefIpts = surfRef(inputImage, octaves, intervals,
                                  sample_step, threshold, (void**)&refIptsPtr);
 
         IpVec* refIpts = new IpVec(refIptsPtr, refIptsPtr+numRefIpts);

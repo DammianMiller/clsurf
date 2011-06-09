@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -58,7 +58,7 @@
 #ifdef _WIN32
 #include <tchar.h>
 #include <Windows.h>
-typedef __int64 cl_time; 
+typedef __int64 cl_time;
 #else
 #include <sys/time.h>
 typedef double cl_time;
@@ -91,13 +91,16 @@ void    cl_freeProgram(cl_program program);
 // Performs a clFinish on the command queue
 void    cl_sync();
 
+void markphase(int phase_id);
+
+
 
 //-------------------------------------------------------
 // Memory allocation
 //-------------------------------------------------------
 
 // Allocates a regular buffer on the device
-cl_mem  cl_allocBuffer(size_t mem_size, 
+cl_mem  cl_allocBuffer(size_t mem_size,
             cl_mem_flags flags = CL_MEM_READ_WRITE);
 
 // XXX I don't think this does exactly what we want it to do
@@ -108,7 +111,7 @@ cl_mem  cl_allocBufferConst(size_t mem_size, void* host_ptr);
 cl_mem  cl_allocBufferPinned(size_t mem_size);
 
 // Allocates an image on the device
-cl_mem  cl_allocImage(size_t height, size_t width, char type, 
+cl_mem  cl_allocImage(size_t height, size_t width, char type,
             cl_mem_flags flags = CL_MEM_READ_WRITE);
 
 
@@ -117,15 +120,15 @@ cl_mem  cl_allocImage(size_t height, size_t width, char type,
 // Data transfers
 //-------------------------------------------------------
 
-// Copies a buffer from the device to pinned memory on the host and 
+// Copies a buffer from the device to pinned memory on the host and
 // maps it so it can be read
-void*   cl_copyAndMapBuffer(cl_mem dst, cl_mem src, size_t size); 
+void*   cl_copyAndMapBuffer(cl_mem dst, cl_mem src, size_t size);
 
 // Copies from one buffer to another
 void    cl_copyBufferToBuffer(cl_mem dst, cl_mem src, size_t size);
 
 // Copies data to a buffer on the device
-void    cl_copyBufferToDevice(cl_mem dst, void *src, size_t mem_size, 
+void    cl_copyBufferToDevice(cl_mem dst, void *src, size_t mem_size,
             cl_bool blocking = CL_TRUE);
 
 // Copies data to an image on the device
@@ -135,7 +138,7 @@ void cl_copyImageToDevice(cl_mem dst, void* src, size_t height, size_t width);
 void    cl_copyImageToHost(void* dst, cl_mem src, size_t height, size_t width);
 
 // Copies data from a device buffer to the host
-void    cl_copyBufferToHost(void *dst, cl_mem src, size_t mem_size, 
+void    cl_copyBufferToHost(void *dst, cl_mem src, size_t mem_size,
             cl_bool blocking = CL_TRUE);
 
 // Copies data from a buffer on the device to an image on the device
@@ -155,22 +158,22 @@ void    cl_writeToZCBuffer(cl_mem mem, void* data, size_t size);
 //-------------------------------------------------------
 
 // Compiles a program
-cl_program  cl_compileProgram(char* kernelPath, char* compileoptions, 
+cl_program  cl_compileProgram(char* kernelPath, char* compileoptions,
                 bool verboseoptions = 0);
 
 // Creates a kernel
 cl_kernel   cl_createKernel(cl_program program, const char* kernelName);
 
-// Executes a kernel 
-void        cl_executeKernel(cl_kernel kernel, cl_uint work_dim, const size_t* 
-                global_work_size, const size_t* local_work_size, 
+// Executes a kernel
+void        cl_executeKernel(cl_kernel kernel, cl_uint work_dim, const size_t*
+                global_work_size, const size_t* local_work_size,
                 const char* description, int identifier = 0);
 
 // Precompiles the kernels for SURF
 cl_kernel*  cl_precompileKernels(char* buildOptions);
 
 // Sets a kernel argument
-void        cl_setKernelArg(cl_kernel kernel, unsigned int index, size_t size, 
+void        cl_setKernelArg(cl_kernel kernel, unsigned int index, size_t size,
                 void* data);
 
 
@@ -182,7 +185,7 @@ void        cl_setKernelArg(cl_kernel kernel, unsigned int index, size_t size,
 double  cl_computeExecTime(cl_event);
 
 // Compute the elapsed time between two CPU timer values
-double  cl_computeTime(cl_time start, cl_time end); 
+double  cl_computeTime(cl_time start, cl_time end);
 
 // Creates an event from CPU timers
 void    cl_createUserEvent(cl_time start, cl_time end, char* desc);
@@ -194,7 +197,7 @@ void    cl_disableEvents();
 void    cl_enableEvents();
 
 // Query the current system time
-void    cl_getTime(cl_time* time); 
+void    cl_getTime(cl_time* time);
 
 // Calls a function which prints events to the terminal
 void    cl_printEvents();
@@ -265,8 +268,8 @@ typedef struct{
 #define NUM_PROGRAMS 7
 
 #define NUM_KERNELS 13
-#define KERNEL_INIT_DET 0 
-#define KERNEL_BUILD_DET 1 
+#define KERNEL_INIT_DET 0
+#define KERNEL_BUILD_DET 1
 #define KERNEL_SURF_DESC 2
 #define KERNEL_NORM_DESC 3
 #define KERNEL_NON_MAX_SUP 4

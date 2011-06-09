@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -61,11 +61,21 @@
 #include "clutils.h"
 
 //! A Better Event Handling Class
+class phase_data
+{
+    public:
+        int phase_id;
+        int phase_start;
+        int phase_delta;
+
+};
+
 class EventList
-{	
+{
     typedef std::pair<cl_event, char*> event_tuple;
 
     typedef std::pair<double, char*> time_tuple;
+
 
 public:
 
@@ -74,6 +84,11 @@ public:
     ~EventList();
 
     void dumpCSV(char* path);
+
+    void dumpTraceCSV_Phase(char* path);
+    void dumpTraceCSV(char* path);
+
+    void markphase(int phaseid);
 
     void newCompileEvent(double time, char* desc);
 
@@ -92,7 +107,7 @@ public:
     void printKernelEvents();
 
     void printUserEvents();
-    
+
     void printAllExecTimes();
 
     void printCompileExecTimes();
@@ -103,7 +118,7 @@ public:
 
     void printUserExecTimes();
 
-private:	
+private:
 
     char* createFilenameWithTimestamp();
 
@@ -122,6 +137,10 @@ private:
     //! A list of user provided events
     std::vector<time_tuple> user_events;
     std::vector<time_tuple>::iterator user_events_iterator;
+
+    std::vector<phase_data> phase_tags;
+    int kernel_event_count;
+    int current_phase_delta;
 };
 
-#endif 
+#endif
