@@ -56,7 +56,8 @@
 
 #include <CL/cl.h>
 
-#include "eventlist.h"
+#include "profiler/eventlist.h"
+
 #include "clutils.h"
 #include "utils.h"
 
@@ -112,7 +113,7 @@ cl_context cl_init(char devicePreference)
     cl_int status;   
 
     // Allocate the event table
-    events = new EventList();
+   
 
     // Discover and populate the platforms
     status = clGetPlatformIDs(0, NULL, &numPlatforms);
@@ -247,6 +248,8 @@ cl_context cl_init(char devicePreference)
         printf("Profiling disabled\n");
         commandQueue = commandQueueNoProf;
     }
+    // TRUE indicates 1 - will free events
+    events = new EventList(context,commandQueue,device,TRUE);
 
     return context;
 }
@@ -503,7 +506,7 @@ void cl_copyBufferToBuffer(cl_mem dst, cl_mem src, size_t size)
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyBuffer", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -531,7 +534,7 @@ void cl_copyBufferToDevice(cl_mem dst, void* src, size_t mem_size, cl_bool block
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyBufferToDevice", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -559,7 +562,7 @@ void cl_copyBufferToHost(void* dst, cl_mem src, size_t mem_size, cl_bool blockin
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyBufferToHost", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -589,7 +592,7 @@ void cl_copyBufferToImage(cl_mem buffer, cl_mem image, int height, int width)
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyBufferToImage", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -620,7 +623,7 @@ void cl_copyImageToDevice(cl_mem dst, void* src, size_t height, size_t width)
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyImageToDevice", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -651,7 +654,7 @@ void cl_copyImageToHost(void* dst, cl_mem src, size_t height, size_t width)
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("copyImageToHost", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 }
 
@@ -682,7 +685,7 @@ void *cl_mapBuffer(cl_mem mem, size_t mem_size, cl_mem_flags flags)
 
     if(eventsEnabled) {
         char* eventStr = catStringWithInt("MapBuffer", eventCnt++);
-        events->newIOEvent(*eventPtr, eventStr);
+        events->add(*eventPtr, eventStr);
     }
 
     return ptr;
@@ -873,7 +876,8 @@ void cl_executeKernel(cl_kernel kernel, cl_uint work_dim,
 
     if(eventsEnabled) {
         char* eventString = catStringWithInt(description, identifier);
-        events->newKernelEvent(*eventPtr, eventString);
+        events->add(*eventPtr, eventString);
+
     }
 }
 
@@ -896,7 +900,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[1]  = cl_compileProgram("CLSource/createDescriptors_kernel.cl", 
         buildOptions, false);
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "createDescriptors");
+    //events->newCompileEvent(cl_computeTime(start, end), "createDescriptors");
     kernel_list[KERNEL_SURF_DESC] = cl_createKernel(program_list[1], 
         "createDescriptors_kernel");
 
@@ -905,7 +909,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[4]  = cl_compileProgram("CLSource/getOrientation_kernels.cl", 
         buildOptions, false);  
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "Orientation");
+    //events->newCompileEvent(cl_computeTime(start, end), "Orientation");
     kernel_list[KERNEL_GET_ORIENT1] = cl_createKernel(program_list[4], 
         "getOrientationStep1");
     kernel_list[KERNEL_GET_ORIENT2] = cl_createKernel(program_list[4], 
@@ -916,7 +920,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[0]  = cl_compileProgram("CLSource/hessianDet_kernel.cl",
         buildOptions, false);
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "hessian_det");
+    //events->newCompileEvent(cl_computeTime(start, end), "hessian_det");
     kernel_list[KERNEL_BUILD_DET] = cl_createKernel(program_list[0], 
         "hessian_det");
 
@@ -925,7 +929,9 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[6] = cl_compileProgram("CLSource/integralImage_kernels.cl", 
         buildOptions, false);
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "IntegralImage");
+    //TODO Add the compile Event type to EventList
+
+    //events->newCompileEvent(cl_computeTime(start, end), "IntegralImage");
     kernel_list[KERNEL_SCAN] = cl_createKernel(program_list[6], "scan");
     kernel_list[KERNEL_SCAN4] = cl_createKernel(program_list[6], "scan4");
     kernel_list[KERNEL_SCANIMAGE] = cl_createKernel(program_list[6], 
@@ -940,7 +946,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[5]  = cl_compileProgram("CLSource/nearestNeighbor_kernel.cl", 
         buildOptions, false);
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "NearestNeighbor");
+    //events->newCompileEvent(cl_computeTime(start, end), "NearestNeighbor");
     kernel_list[KERNEL_NN] = cl_createKernel(program_list[5], 
         "NearestNeighbor");
 
@@ -949,7 +955,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[3]  = cl_compileProgram("CLSource/nonMaxSuppression_kernel.cl",
         buildOptions, false); 
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "NonMaxSuppression");
+    //events->newCompileEvent(cl_computeTime(start, end), "NonMaxSuppression");
     kernel_list[KERNEL_NON_MAX_SUP] = cl_createKernel(program_list[3], 
         "non_max_supression_kernel");
 
@@ -958,7 +964,7 @@ cl_kernel* cl_precompileKernels(char* buildOptions)
     program_list[2]  = cl_compileProgram("CLSource/normalizeDescriptors_kernel.cl",
         buildOptions, false); 
     cl_getTime(&end);
-    events->newCompileEvent(cl_computeTime(start, end), "normalize");
+    //events->newCompileEvent(cl_computeTime(start, end), "normalize");
     kernel_list[KERNEL_NORM_DESC] = cl_createKernel(program_list[2], 
         "normalizeDescriptors");
 
@@ -1048,8 +1054,11 @@ void cl_createUserEvent(cl_time start, cl_time end, char* desc) {
     if(!eventsEnabled) {
         return;
     }
+    cl_user_event t;
+    t->start = start;
+    t->end = end;
 
-    events->newUserEvent(cl_computeTime(start, end), desc);
+    events->add(t, desc);
 }
 
 //! Disables events
@@ -1095,13 +1104,14 @@ void cl_getTime(cl_time* time)
 //! Print out the OpenCL events
 void cl_printEvents() {
 
-    events->printAllExecTimes();
+	events->printEvents();
+
 }
 
 //! Write out all current events to a file
 void cl_writeEventsToFile(char* path) {
 
-    events->dumpCSV(path);
+	events->dumpEvents(path);
 }
 
 

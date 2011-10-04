@@ -1,10 +1,10 @@
 EXECUTABLE    := OpenSURF
 
-CCFILES      := clutils.cpp cvutils.cpp eventlist.cpp fasthessian.cpp \
+CCFILES      := clutils.cpp cvutils.cpp fasthessian.cpp \
                 main.cpp nearestNeighbor.cpp responselayer.cpp surf.cpp \
                 utils.cpp
 
-C_DEPS       := clutils.h cvutils.h eventlist.h fasthessian.h \
+C_DEPS       := clutils.h cvutils.h fasthessian.h \
                 kmeans.h nearestNeighbor.h prf_util.h responselayer.h \
                 surf.h utils.h
 
@@ -18,6 +18,8 @@ NVIDIA_OPENCL_INSTALL_PATH := /usr/local/cuda
 
 OPENCV_INC := /usr/include/opencv
 OPENCV_LIB := /usr/lib64
+
+PROFILER_INC := $(PALANTIR_ROOT)
 USE_OPENCV_VERSION := 2.1
 
 
@@ -28,7 +30,7 @@ OPENCV_LIB_NAMES    :=  -lcxcore -lcv -lcvaux -lhighgui -lml
 endif
 
 # Basic directory setup 
-SRCDIR         = src
+SRCDIR         = surf_src
 AMD_BINDIR     = bin/amd
 NVIDIA_BINDIR  = bin/nvidia
 AMD_OBJDIR     = obj/amd
@@ -40,14 +42,15 @@ CC   = gcc -O3
 LINK = g++ -O3 
 
 # Includes
-COMMON_INCLUDES += -I$(OPENCV_INC)  
+COMMON_INCLUDES += -I$(OPENCV_INC) -I$(PROFILER_INC)
 AMD_INCLUDES    += -I$(AMD_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 NVIDIA_INCLUDES += -I$(NVIDIA_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 
 # Libs
+PALANTIR_LIB := /home/pmistry/perhaad-palantir/Debug
 # NVIDIA installs their OpenCL library in /usr/lib64
 COMMON_LIBS := -L$(OPENCV_LIB) $(OPENCV_LIB_NAMES)
-AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL 
+AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL -L$(PALANTIR_LIB) -lperhaad-palantir
 NVIDIA_LIB  := -L/usr/lib64 -lOpenCL 
 
 # Warning flags

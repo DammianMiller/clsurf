@@ -31,7 +31,7 @@
  *                                                                            *
  * If you use the software (in whole or in part), you shall adhere to all     *
  * applicable U.S., European, and other export laws, including but not        *
- * limited to the U.S. Export Administration Regulations (“EAR”), (15 C.F.R.  *
+ * limited to the U.S. Export Administration Regulations (ï¿½EARï¿½), (15 C.F.R.  *
  * Sections 730 through 774), and E.U. Council Regulation (EC) No 1334/2000   *
  * of 22 June 2000.  Further, pursuant to Section 740.6 of the EAR, you       *
  * hereby certify that, except pursuant to a license granted by the United    *
@@ -46,7 +46,7 @@
  *(currently found in Supplement 1 to Part 774 of EAR).  For the most current *
  * Country Group listings, or for additional information about the EAR or     *
  * your obligations under those regulations, please refer to the U.S. Bureau  *
- * of Industry and Security’s website at http://www.bis.doc.gov/.             *
+ * of Industry and Securityï¿½s website at http://www.bis.doc.gov/.             *
  \****************************************************************************/
 
 #ifdef _WIN32
@@ -56,9 +56,11 @@
 #include <stdio.h>
 #include <CL/cl.h>
 
+#include "profiler/eventlist.h"
+
 #include "clutils.h"
 #include "cv.h"
-#include "eventlist.h"
+
 #include "highgui.h"
 #include "nearestNeighbor.h"
 #include "cvutils.h"
@@ -171,6 +173,8 @@ int main(int argc, char **argv)
     printf("|--------------------------------------------------|\n\n");
 
     // Initialize OpenCL
+    //compare_images * adevice;
+
     cl_init(devicePref);
     
 	// NVIDIA's OpenCL cuurently doesn't support single-channel images
@@ -409,6 +413,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
 
     // Limit the loop to 1000 iterations
     int limit = 1000;
+    surf->prev_img = NULL;
     while(limit--)
     {
         // Sanity check frame sizes
@@ -421,6 +426,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
         // interesting points in the image.   When the function completes
         // the descriptors are still on the device.
         surf->run(frame, false);
+        surf->prev_img = frame;
 
         // The ipts hold the descriptors that describe the interesting
         // points in the image

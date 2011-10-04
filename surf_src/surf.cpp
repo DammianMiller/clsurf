@@ -31,7 +31,7 @@
  *                                                                            *
  * If you use the software (in whole or in part), you shall adhere to all     *
  * applicable U.S., European, and other export laws, including but not        *
- * limited to the U.S. Export Administration Regulations (“EAR”), (15 C.F.R.  *
+ * limited to the U.S. Export Administration Regulations (ï¿½EARï¿½), (15 C.F.R.  *
  * Sections 730 through 774), and E.U. Council Regulation (EC) No 1334/2000   *
  * of 22 June 2000.  Further, pursuant to Section 740.6 of the EAR, you       *
  * hereby certify that, except pursuant to a license granted by the United    *
@@ -46,7 +46,7 @@
  *(currently found in Supplement 1 to Part 774 of EAR).  For the most current *
  * Country Group listings, or for additional information about the EAR or     *
  * your obligations under those regulations, please refer to the U.S. Bureau  *
- * of Industry and Security’s website at http://www.bis.doc.gov/.             *
+ * of Industry and Securityï¿½s website at http://www.bis.doc.gov/.             *
  \****************************************************************************/
 
 #include <stdlib.h>
@@ -56,7 +56,8 @@
 #include "surf.h"
 #include "clutils.h"
 #include "utils.h"
-#include "eventlist.h"
+#include "profiler/eventlist.h"
+#include "analysis-devices/analysis-routines.h"
 #include "stdio.h"
 
 #define DESC_SIZE 64
@@ -91,9 +92,11 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
            cl_kernel* kernel_list)
            : kernel_list(kernel_list)
 {
+	pipeline_state = ENABLED;
 
     this->fh = new FastHessian(i_height, i_width, octaves, 
         intervals, sample_step, threshold, kernel_list);
+
 
     // Once we know the size of the image, successive frames should stay
     // the same size, so we can just allocate the space once for the integral
@@ -152,6 +155,13 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 #endif
     // This is how much space is available for Ipts
     this->maxIpts = initialPoints;
+
+
+	adevice = new compare_images;
+	adevice->configure_analysis_device();
+	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
+	adevice->init_buffers(i_height*i_width*sizeof(float));
+
 }
 
 
@@ -197,12 +207,12 @@ Surf::~Surf() {
     Saves integral Image in d_intImage on the GPU
     \param source Input Image as grabbed by OpenCv
 */
-void Surf::computeIntegralImage(IplImage* source)
+void Surf::computeIntegralImage(IplImage* img)
 {
     //! convert the image to single channel 32f
 
     // TODO This call takes about 4ms (is there any way to speed it up?)
-    IplImage *img = getGray(source);
+  // IplImage *img = getGray(source);
 
     // set up variables for data access
     int height = img->height;
@@ -536,6 +546,11 @@ IpVec* Surf::retrieveDescriptors()
 
     return ipts;
 }
+void Surf::set_pipeline_state(bool new_pipeline_state)
+{
+	pipeline_state = new_pipeline_state;
+}
+
 
 
 //! Function that builds vector of interest points.  This is the main SURF function
@@ -546,7 +561,7 @@ IpVec* Surf::retrieveDescriptors()
     \param upright Switch for future functionality of upright surf
     \param fh FastHessian object
 */
-void Surf::run(IplImage* img, bool upright) 
+void Surf::run(IplImage* img, bool upright)
 {
 
     if (upright)
@@ -558,39 +573,57 @@ void Surf::run(IplImage* img, bool upright)
 
     // Perform the scan sum of the image (populates d_intImage)
     // GPU kernels: scan (x2), tranpose (x2)
-    this->computeIntegralImage(img);
-
-    // Determines the points of interest
-    // GPU kernels: init_det, hessian_det (x12), non_max_suppression (x3)
-    // GPU mem transfer: copies back the number of ipoints 
-    this->numIpts = this->fh->getIpoints(img, this->d_intImage, this->d_laplacian,
-                        this->d_pixPos, this->d_scale, this->maxIpts);
-
-    // Verify that there was enough space allocated for the number of
-    // Ipoints found
-    if(this->numIpts >= this->maxIpts) {
-        // If not enough space existed, we need to reallocate space and
-        // run the kernels again
-
-        printf("Not enough space for Ipoints, reallocating and running again\n");
-        this->maxIpts = this->numIpts * 2;
-        this->reallocateIptBuffers();
-        // XXX This was breaking sometimes
-        this->fh->reset();
-        this->numIpts = fh->getIpoints(img, this->d_intImage, 
-            this->d_laplacian, this->d_pixPos, this->d_scale, this->maxIpts);
+	img_temp = getGray(img);
+    if(prev_img != NULL)
+    {
+	    int height = img->height;
+	    int width = img->width;
+    	prev_img_temp = getGray(prev_img);
+		adevice->assign_buffers_copy((float *)prev_img_temp->imageData,
+								(float *)img_temp->imageData,height*width*sizeof(float));
+		adevice->configure_analysis_kernel(width,height);
+		adevice->inject_analysis();
+		bool new_pipeline_state = adevice->set_pipeline_state() ;
+		//! This function passes information to SURF
+		set_pipeline_state(new_pipeline_state);
     }
 
-    printf("There were %d interest points\n", this->numIpts);    
+    if( pipeline_state == ENABLED)
+    {
+ 		this->computeIntegralImage(img_temp);
 
-    // Main SURF-64 loop assigns orientations and gets descriptors    
-    if(this->numIpts==0) return;
+		// Determines the points of interest
+		// GPU kernels: init_det, hessian_det (x12), non_max_suppression (x3)
+		// GPU mem transfer: copies back the number of ipoints
+		this->numIpts = this->fh->getIpoints(img, this->d_intImage, this->d_laplacian,
+							this->d_pixPos, this->d_scale, this->maxIpts);
 
-    // GPU kernel: getOrientation1 (1x), getOrientation2 (1x)
-    this->getOrientations(img->width, img->height);
+		// Verify that there was enough space allocated for the number of
+		// Ipoints found
+		if(this->numIpts >= this->maxIpts) {
+			// If not enough space existed, we need to reallocate space and
+			// run the kernels again
 
-    // GPU kernel: surf64descriptor (1x), norm64descriptor (1x)
-    this->createDescriptors(img->width, img->height);
+			printf("Not enough space for Ipoints, reallocating and running again\n");
+			this->maxIpts = this->numIpts * 2;
+			this->reallocateIptBuffers();
+			// XXX This was breaking sometimes
+			this->fh->reset();
+			this->numIpts = fh->getIpoints(img, this->d_intImage,
+				this->d_laplacian, this->d_pixPos, this->d_scale, this->maxIpts);
+		}
+
+		printf("There were %d interest points\n", this->numIpts);
+
+		// Main SURF-64 loop assigns orientations and gets descriptors
+		if(this->numIpts==0) return;
+
+		// GPU kernel: getOrientation1 (1x), getOrientation2 (1x)
+		this->getOrientations(img->width, img->height);
+
+		// GPU kernel: surf64descriptor (1x), norm64descriptor (1x)
+		this->createDescriptors(img->width, img->height);
+
+    }
 }
-
 

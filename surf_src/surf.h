@@ -31,7 +31,7 @@
  *                                                                            *
  * If you use the software (in whole or in part), you shall adhere to all     *
  * applicable U.S., European, and other export laws, including but not        *
- * limited to the U.S. Export Administration Regulations (“EAR”), (15 C.F.R.  *
+ * limited to the U.S. Export Administration Regulations (ï¿½EARï¿½), (15 C.F.R.  *
  * Sections 730 through 774), and E.U. Council Regulation (EC) No 1334/2000   *
  * of 22 June 2000.  Further, pursuant to Section 740.6 of the EAR, you       *
  * hereby certify that, except pursuant to a license granted by the United    *
@@ -46,20 +46,21 @@
  *(currently found in Supplement 1 to Part 774 of EAR).  For the most current *
  * Country Group listings, or for additional information about the EAR or     *
  * your obligations under those regulations, please refer to the U.S. Bureau  *
- * of Industry and Security’s website at http://www.bis.doc.gov/.             *
+ * of Industry and Securityï¿½s website at http://www.bis.doc.gov/.             *
  \****************************************************************************/
 
 #ifndef SURF_H
 #define SURF_H
 
-#include "cv.h"
+#include <cv.h>
 
 #include <CL/cl.h>
 #include <ctime>
 #include <vector>
 
 #include "fasthessian.h"
-#include "eventlist.h"
+#include "profiler/eventlist.h"
+#include "analysis-devices/analysis-routines.h"
 
 // Uncomment the following define to use optimized data transfers
 // when possible.  Note that AMD's use of memory mapping is 
@@ -85,6 +86,13 @@ class Surf {
 
   public:
     
+	IplImage *img_temp ;
+	IplImage *prev_img_temp ;
+	IplImage *prev_img ;
+
+	//! Analysis devices interface
+	compare_images * adevice;
+
     Surf(int initialPoints, int i_height, int i_width,  int octaves, 
            int intervals, int sample_step, float threshold, 
            cl_kernel* kernel_list);
@@ -112,8 +120,10 @@ class Surf {
     //! Run the main SURF loop
     void run(IplImage* img, bool upright);
 
+    void set_pipeline_state(bool new_pipeline_state);
   private:
 
+    bool pipeline_state;
     // The actual number of ipoints for this image
     int numIpts; 
 
