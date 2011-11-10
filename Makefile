@@ -2,7 +2,7 @@ EXECUTABLE    := OpenSURF
 
 CCFILES      := clutils.cpp cvutils.cpp fasthessian.cpp \
                 main.cpp nearestNeighbor.cpp responselayer.cpp surf.cpp \
-                utils.cpp
+                utils.cpp device-compare-ortn.cpp
 
 C_DEPS       := clutils.h cvutils.h fasthessian.h \
                 kmeans.h nearestNeighbor.h prf_util.h responselayer.h \
@@ -19,7 +19,6 @@ NVIDIA_OPENCL_INSTALL_PATH := /usr/local/cuda
 OPENCV_INC := /usr/include/opencv
 OPENCV_LIB := /usr/lib64
 
-PROFILER_INC := $(PALANTIR_ROOT)
 USE_OPENCV_VERSION := 2.1
 
 
@@ -37,20 +36,20 @@ AMD_OBJDIR     = obj/amd
 NVIDIA_OBJDIR  = obj/nvidia
 
 # Compilers
-CXX  = g++ -O3
-CC   = gcc -O3
-LINK = g++ -O3 
+CXX  = g++ -O3 -pg
+CC   = gcc -O3 -pg
+LINK = g++ -O3 -pg 
 
 # Includes
-COMMON_INCLUDES += -I$(OPENCV_INC) -I$(PROFILER_INC)
+MISCINC	:= /home/pmistry/clhaptic/src/libmisc
+COMMON_INCLUDES += -I$(OPENCV_INC) -I$(PROFILERINC) -I$(ANALYSISDEVICESINC) -I$(MISCINC) -I$(RULEINC)
 AMD_INCLUDES    += -I$(AMD_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 NVIDIA_INCLUDES += -I$(NVIDIA_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 
 # Libs
-PALANTIR_LIB := /home/pmistry/perhaad-palantir/Debug
-# NVIDIA installs their OpenCL library in /usr/lib64
+HAPTICLIB := -L$(PROFILERINC) -lprofiler -L$(ANALYSISDEVICESINC) -lanalysis-devices -L$(MISCINC) -lmisc -L$(RULEINC) -lrules
 COMMON_LIBS := -L$(OPENCV_LIB) $(OPENCV_LIB_NAMES)
-AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL -L$(PALANTIR_LIB) -lperhaad-palantir
+AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL $(HAPTICLIB)
 NVIDIA_LIB  := -L/usr/lib64 -lOpenCL 
 
 # Warning flags

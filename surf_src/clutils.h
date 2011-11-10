@@ -64,7 +64,7 @@
 //typedef double cl_time;
 #endif
 
-#include "profiler/eventlist.h"
+#include "eventlist.h"
 
 //-------------------------------------------------------
 // Initialization and Cleanup
@@ -93,7 +93,7 @@ void    cl_freeProgram(cl_program program);
 // Performs a clFinish on the command queue
 void    cl_sync();
 
-
+EventList * cl_profiler_ptr();
 //-------------------------------------------------------
 // Memory allocation
 //-------------------------------------------------------

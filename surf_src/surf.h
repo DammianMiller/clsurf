@@ -54,13 +54,15 @@
 
 #include <cv.h>
 
+
 #include <CL/cl.h>
 #include <ctime>
 #include <vector>
 
 #include "fasthessian.h"
-#include "profiler/eventlist.h"
-#include "analysis-devices/analysis-routines.h"
+#include "eventlist.h"
+#include "device-compare-images.h"
+#include "device-compare-ortn.h"
 
 // Uncomment the following define to use optimized data transfers
 // when possible.  Note that AMD's use of memory mapping is 
@@ -68,6 +70,10 @@
 #define OPTIMIZED_TRANSFERS
 
 #define DESC_SIZE 64
+
+#define _IMAGE_COMPARE
+
+#define _ORTN_CHECK
 
 //! Ipoint structure holds a interest point descriptor
 typedef struct{
@@ -85,14 +91,25 @@ typedef std::vector<Ipoint> IpVec;
 class Surf {
 
   public:
-    
-	IplImage *img_temp ;
-	IplImage *prev_img_temp ;
-	IplImage *prev_img ;
 
+	bool adevice_state;
+	IplImage *img_gray ;
+ 	IplImage *prev_img_gray ;
+
+	int runcount ;
+	int skipcount;
+
+#ifdef _IMAGE_COMPARE
 	//! Analysis devices interface
 	compare_images * adevice;
 
+#endif
+
+#ifdef _ORTN_CHECK
+
+	compare_ortn * odevice;
+
+#endif
     Surf(int initialPoints, int i_height, int i_width,  int octaves, 
            int intervals, int sample_step, float threshold, 
            cl_kernel* kernel_list);
@@ -121,9 +138,11 @@ class Surf {
     void run(IplImage* img, bool upright);
 
     void set_pipeline_state(bool new_pipeline_state);
+
   private:
 
     bool pipeline_state;
+    bool run_orientation_stage;
     // The actual number of ipoints for this image
     int numIpts; 
 

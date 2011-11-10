@@ -62,7 +62,7 @@
 #include <time.h>
 #include <ctime>
 
-#include "profiler/eventlist.h"
+#include "eventlist.h"
 #include "responselayer.h"
 
 static const int OCTAVES = 5;

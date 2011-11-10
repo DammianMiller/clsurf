@@ -124,6 +124,9 @@ inline int fRound(float flt)
     return (int) floor(flt+0.5f);
 }
 
+//! Make a copy of an image using cvClone
+IplImage *copyImage(const IplImage * img);
+
 //! Convert image to single channel 32F
 IplImage* getGray(const IplImage *img);
 

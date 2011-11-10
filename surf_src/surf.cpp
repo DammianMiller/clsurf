@@ -56,8 +56,9 @@
 #include "surf.h"
 #include "clutils.h"
 #include "utils.h"
-#include "profiler/eventlist.h"
-#include "analysis-devices/analysis-routines.h"
+#include "eventlist.h"
+#include "device-compare-images.h"
+#include "device-compare-ortn.h"
 #include "stdio.h"
 
 #define DESC_SIZE 64
@@ -92,7 +93,14 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
            cl_kernel* kernel_list)
            : kernel_list(kernel_list)
 {
+
+
+	//! Default states for pipelines - ENABLED
 	pipeline_state = ENABLED;
+	run_orientation_stage = ENABLED;
+
+	runcount = 0;
+	skipcount = 0;
 
     this->fh = new FastHessian(i_height, i_width, octaves, 
         intervals, sample_step, threshold, kernel_list);
@@ -156,24 +164,41 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
     // This is how much space is available for Ipts
     this->maxIpts = initialPoints;
 
+#ifdef _ORTN_CHECK
+
+    odevice = new compare_ortn;
+    odevice->configure_analysis_subdevice_cpu();
+	odevice->init_app_profiler(cl_profiler_ptr());
+	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare",0);
+	odevice->init_buffers(1000*sizeof(float));
+	odevice->set_device_state(ENABLED);
+
+#endif
+
+#ifdef _IMAGE_COMPARE
 
 	adevice = new compare_images;
-	adevice->configure_analysis_device();
+	adevice->configure_analysis_subdevice_cpu();
+	adevice->init_app_profiler(cl_profiler_ptr());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
 	adevice->init_buffers(i_height*i_width*sizeof(float));
+	adevice->set_device_state(ENABLED);
+
+#endif
 
 }
 
 
 //! Destructor
 Surf::~Surf() {
-
+printf("0\n");
     cl_freeMem(this->d_intImage);
     cl_freeMem(this->d_tmpIntImage);
     cl_freeMem(this->d_tmpIntImageT1);
     cl_freeMem(this->d_tmpIntImageT2);
     cl_freeMem(this->d_desc);
     cl_freeMem(this->d_orientation);
+    printf("1\n");
     cl_freeMem(this->d_gauss25);
     cl_freeMem(this->d_id);
     cl_freeMem(this->d_i);
@@ -185,6 +210,7 @@ Surf::~Surf() {
     cl_freeMem(this->d_length);
 
 #ifdef OPTIMIZED_TRANSFERS
+    printf("2\n");
     cl_freeMem(this->h_orientation);
     cl_freeMem(this->h_scale);
     cl_freeMem(this->h_laplacian);
@@ -372,39 +398,42 @@ void Surf::createDescriptors(int i_width, int i_height)
 */
 void Surf::getOrientations(int i_width, int i_height)
 {
+    if(run_orientation_stage == ENABLED)
+    {
 
-    cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
-    cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];  
+    	cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
+		cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];
 
-    size_t localWorkSize1[] = {169};
-    size_t globalWorkSize1[] = {this->numIpts*169};
+		size_t localWorkSize1[] = {169};
+		size_t globalWorkSize1[] = {this->numIpts*169};
 
-    /*!
-    Assign the supplied Ipoint an orientation
-    */
+		/*!
+		Assign the supplied Ipoint an orientation
+		*/
 
-    cl_setKernelArg(getOrientation, 0, sizeof(cl_mem), (void *)&(this->d_intImage));
-    cl_setKernelArg(getOrientation, 1, sizeof(cl_mem), (void *)&(this->d_scale));
-    cl_setKernelArg(getOrientation, 2, sizeof(cl_mem), (void *)&(this->d_pixPos));
-    cl_setKernelArg(getOrientation, 3, sizeof(cl_mem), (void *)&(this->d_gauss25));
-    cl_setKernelArg(getOrientation, 4, sizeof(cl_mem), (void *)&(this->d_id));
-    cl_setKernelArg(getOrientation, 5, sizeof(int),    (void *)&i_width);
-    cl_setKernelArg(getOrientation, 6, sizeof(int),    (void *)&i_height);
-    cl_setKernelArg(getOrientation, 7, sizeof(cl_mem), (void *)&(this->d_res));
+		cl_setKernelArg(getOrientation, 0, sizeof(cl_mem), (void *)&(this->d_intImage));
+		cl_setKernelArg(getOrientation, 1, sizeof(cl_mem), (void *)&(this->d_scale));
+		cl_setKernelArg(getOrientation, 2, sizeof(cl_mem), (void *)&(this->d_pixPos));
+		cl_setKernelArg(getOrientation, 3, sizeof(cl_mem), (void *)&(this->d_gauss25));
+		cl_setKernelArg(getOrientation, 4, sizeof(cl_mem), (void *)&(this->d_id));
+		cl_setKernelArg(getOrientation, 5, sizeof(int),    (void *)&i_width);
+		cl_setKernelArg(getOrientation, 6, sizeof(int),    (void *)&i_height);
+		cl_setKernelArg(getOrientation, 7, sizeof(cl_mem), (void *)&(this->d_res));
 
-    // Execute the kernel
-    cl_executeKernel(getOrientation, 1, globalWorkSize1, localWorkSize1, 
-        "GetOrientations");
+		// Execute the kernel
+		cl_executeKernel(getOrientation, 1, globalWorkSize1, localWorkSize1,
+			"GetOrientations");
 
-    cl_setKernelArg(getOrientation2, 0, sizeof(cl_mem), (void *)&(this->d_orientation));
-    cl_setKernelArg(getOrientation2, 1, sizeof(cl_mem), (void *)&(this->d_res));
+		cl_setKernelArg(getOrientation2, 0, sizeof(cl_mem), (void *)&(this->d_orientation));
+		cl_setKernelArg(getOrientation2, 1, sizeof(cl_mem), (void *)&(this->d_res));
 
-    size_t localWorkSize2[] = {42};
-    size_t globalWorkSize2[] = {numIpts*42};
+		size_t localWorkSize2[] = {42};
+		size_t globalWorkSize2[] = {numIpts*42};
 
-    // Execute the kernel
-    cl_executeKernel(getOrientation2, 1, globalWorkSize2, localWorkSize2,
-        "GetOrientations2");
+		// Execute the kernel
+		cl_executeKernel(getOrientation2, 1, globalWorkSize2, localWorkSize2,
+			"GetOrientations2");
+    }
 }
 
 //! Allocates the memory objects requried for the ipt descriptor information
@@ -561,6 +590,8 @@ void Surf::set_pipeline_state(bool new_pipeline_state)
     \param upright Switch for future functionality of upright surf
     \param fh FastHessian object
 */
+static int pid = 0;
+
 void Surf::run(IplImage* img, bool upright)
 {
 
@@ -573,24 +604,47 @@ void Surf::run(IplImage* img, bool upright)
 
     // Perform the scan sum of the image (populates d_intImage)
     // GPU kernels: scan (x2), tranpose (x2)
-	img_temp = getGray(img);
-    if(prev_img != NULL)
+
+	img_gray = getGray(img);
+    int height = img->height;
+    int width = img->width;
+
+ 	//Skip the 1st frame
+    if(prev_img_gray != NULL)
     {
-	    int height = img->height;
-	    int width = img->width;
-    	prev_img_temp = getGray(prev_img);
-		adevice->assign_buffers_copy((float *)prev_img_temp->imageData,
-								(float *)img_temp->imageData,height*width*sizeof(float));
+
+	    //	prev_img_temp = getGray(prev_img);
+		//for(int i = 0; i< ((img_gray->height)*(img_gray->width)); i++)
+		//{
+		//	float * t = (float *)prev_img_gray->imageData;
+		//	if( t[i] >  0.0000f)
+		//			printf("Prev Img %f \n",t[i]);
+		//}
+#ifdef _IMAGE_COMPARE
+
+		adevice->assign_buffers_copy(
+							(float *)prev_img_gray->imageData,
+							(float *)img_gray->imageData,
+							height*width*sizeof(float));
 		adevice->configure_analysis_kernel(width,height);
 		adevice->inject_analysis();
-		bool new_pipeline_state = adevice->set_pipeline_state() ;
+		bool new_pipeline_state = adevice->get_analysis_result() ;
 		//! This function passes information to SURF
 		set_pipeline_state(new_pipeline_state);
-    }
+#endif
 
+    }
+    //cl_sync();
+    printf("Pipeline State %d \n",pipeline_state);
     if( pipeline_state == ENABLED)
     {
- 		this->computeIntegralImage(img_temp);
+		printf("Image pointers %p \t %p \n",prev_img_gray,img);
+
+		//prev_img_gray = img_gray;
+		//prev_img_gray = copyImage(img_gray);
+
+    	runcount++;
+ 		this->computeIntegralImage(img_gray);
 
 		// Determines the points of interest
 		// GPU kernels: init_det, hessian_det (x12), non_max_suppression (x3)
@@ -613,7 +667,7 @@ void Surf::run(IplImage* img, bool upright)
 				this->d_laplacian, this->d_pixPos, this->d_scale, this->maxIpts);
 		}
 
-		printf("There were %d interest points\n", this->numIpts);
+		//printf("There were %d interest points\n", this->numIpts);
 
 		// Main SURF-64 loop assigns orientations and gets descriptors
 		if(this->numIpts==0) return;
@@ -624,6 +678,36 @@ void Surf::run(IplImage* img, bool upright)
 		// GPU kernel: surf64descriptor (1x), norm64descriptor (1x)
 		this->createDescriptors(img->width, img->height);
 
+#ifdef _ORTN_CHECK
+	    if(prev_img_gray != NULL)
+	    {
+	    	float * t = (float *)malloc(sizeof(float)*100);
+	    	float * u = (float *)malloc(sizeof(float)*100);
+			odevice->assign_buffers_copy(
+								t,
+								u,
+								100*sizeof(float));
+			odevice->configure_analysis_kernel(100);
+			odevice->inject_analysis();
+
+			run_orientation_stage = odevice->get_analysis_result() ;
+	    }
+		//! This function passes information to SURF
+#endif
+
     }
+    else
+    {
+    	skipcount++;
+    	//printf("Skipping SURF \n");
+    }
+#ifdef _ORTN_CHECK
+	adevice->app_profiler->markPhase(pid);
+	pid = pid+1;
+#endif
+    //printf("Runcount vs Skipcount %d\t %d\n",runcount,skipcount);
+   // getchar();
+
+
 }
 

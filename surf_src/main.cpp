@@ -56,10 +56,12 @@
 #include <stdio.h>
 #include <CL/cl.h>
 
-#include "profiler/eventlist.h"
 
 #include "clutils.h"
 #include "cv.h"
+
+#include "eventlist.h"
+
 
 #include "highgui.h"
 #include "nearestNeighbor.h"
@@ -413,7 +415,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
 
     // Limit the loop to 1000 iterations
     int limit = 1000;
-    surf->prev_img = NULL;
+    surf->prev_img_gray = NULL;
     while(limit--)
     {
         // Sanity check frame sizes
@@ -426,7 +428,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
         // interesting points in the image.   When the function completes
         // the descriptors are still on the device.
         surf->run(frame, false);
-        surf->prev_img = frame;
+        //! The surf::prev_img_gray usage is within the surf::run function
 
         // The ipts hold the descriptors that describe the interesting
         // points in the image
@@ -463,7 +465,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
             break;
         }
     }
-
+    printf("Surf Ran %d \t Skipped %d\n",surf->runcount, surf->skipcount);
     // Write events to file if path was supplied
     if(eventsPath != NULL) {
         cl_writeEventsToFile(eventsPath);

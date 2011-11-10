@@ -56,7 +56,7 @@
 
 #include <CL/cl.h>
 
-#include "profiler/eventlist.h"
+#include "eventlist.h"
 
 #include "clutils.h"
 #include "utils.h"
@@ -209,9 +209,9 @@ cl_context cl_init(char devicePreference)
     // to decide at runtime
     cl_uint chosen_platform, chosen_device;
     // UNCOMMENT the following two lines to manually select device each time
-    //printf("Enter Platform and Device No (Seperated by Space) \n");
-    //scanf("%d %d", &chosen_platform, &chosen_device);	
-    chosen_platform = 0; 
+    printf("Enter Platform and Device No (Seperated by Space) \n");
+    //scanf("%d %d", &chosen_platform, &chosen_device);
+    chosen_platform = 0;
     chosen_device = 0;
     printf("Using Platform %d, Device %d \n", chosen_platform, chosen_device);
 
@@ -248,8 +248,10 @@ cl_context cl_init(char devicePreference)
         printf("Profiling disabled\n");
         commandQueue = commandQueueNoProf;
     }
-    // TRUE indicates 1 - will free events
-    events = new EventList(context,commandQueue,device,TRUE);
+
+     // TRUE indicates 1 - will free events
+    char name_profiler[] = "surf_profiler";
+    events = new EventList(context,commandQueue,device,TRUE,name_profiler);
 
     return context;
 }
@@ -291,6 +293,13 @@ void  cl_cleanup()
 
     // Free the platforms
     free(platforms);
+}
+
+
+EventList * cl_profiler_ptr()
+{
+	return events;
+
 }
 
 //! Release a kernel object

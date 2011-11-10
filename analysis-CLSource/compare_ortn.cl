@@ -35,6 +35,7 @@ void compare(
 			__local float * buff,
 			int W, int H)
 {
+	printf("begin compare orntn\n");
 	int x;
     // get the x & y indexes and absolute
 	//printf("reach stride");
@@ -57,7 +58,7 @@ void compare(
 
  	barrier(CLK_LOCAL_MEM_FENCE);
     int stride ; // 64/2
-    for (stride = 32; stride>0; stride>>=1)
+    for (stride = 16; stride>0; stride>>=1)
     {
         if (tha < stride)	
         {
@@ -69,7 +70,7 @@ void compare(
     if(tha == 0)
     {
     	result[get_group_id(0)] = buff[0];
-    //	printf("Result is %f\n",buff[0]);
+    	printf("Result is %f\n",buff[0]);
     }
  
 	
