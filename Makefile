@@ -42,12 +42,14 @@ LINK = g++ -O3 -pg
 
 # Includes
 MISCINC	:= /home/pmistry/clhaptic/src/libmisc
-COMMON_INCLUDES += -I$(OPENCV_INC) -I$(PROFILERINC) -I$(ANALYSISDEVICESINC) -I$(MISCINC) -I$(RULEINC)
+TOPOINC	:= /home/pmistry/clhaptic/src/libtopology
+COMMON_INCLUDES += -I$(OPENCV_INC) -I$(PROFILERINC) -I$(ANALYSISDEVICESINC) -I$(MISCINC) -I$(RULEINC) -I$(TOPOINC)
 AMD_INCLUDES    += -I$(AMD_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 NVIDIA_INCLUDES += -I$(NVIDIA_OPENCL_INSTALL_PATH)/include $(COMMON_INCLUDES)
 
 # Libs
-HAPTICLIB := -L$(PROFILERINC) -lprofiler -L$(ANALYSISDEVICESINC) -lanalysis-devices -L$(MISCINC) -lmisc -L$(RULEINC) -lrules
+HAPTICSRCDIR    := /home/pmistry/clhaptic/src
+HAPTICLIB   := -L$(HAPTICSRCDIR) -lhaptic
 COMMON_LIBS := -L$(OPENCV_LIB) $(OPENCV_LIB_NAMES)
 AMD_LIB     := -L$(AMD_OPENCL_INSTALL_PATH)/lib/x86_64 -lOpenCL $(HAPTICLIB)
 NVIDIA_LIB  := -L/usr/lib64 -lOpenCL 
