@@ -2,11 +2,11 @@ EXECUTABLE    := OpenSURF
 
 CCFILES      := clutils.cpp cvutils.cpp fasthessian.cpp \
                 main.cpp nearestNeighbor.cpp responselayer.cpp surf.cpp \
-                utils.cpp device-compare-ortn.cpp
+                utils.cpp device-compare-ortn.cpp device-bucketize.cpp
 
 C_DEPS       := clutils.h cvutils.h fasthessian.h \
                 kmeans.h nearestNeighbor.h prf_util.h responselayer.h \
-                surf.h utils.h
+                surf.h utils.h device-bucketize.h
 
 # Comment the following to disable building 
 BUILD_AMD    = 1

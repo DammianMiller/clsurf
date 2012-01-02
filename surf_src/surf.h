@@ -61,6 +61,7 @@
 
 #include "fasthessian.h"
 #include "eventlist.h"
+#include "device-bucketize.h"
 #include "device-compare-images.h"
 #include "device-compare-ortn.h"
 
@@ -74,6 +75,8 @@
 #define _IMAGE_COMPARE
 
 #define _ORTN_CHECK
+
+#define _BUCKETIZE
 
 //! Ipoint structure holds a interest point descriptor
 typedef struct{
@@ -110,7 +113,14 @@ class Surf {
 	compare_ortn * odevice;
 
 #endif
-    Surf(int initialPoints, int i_height, int i_width,  int octaves, 
+
+#ifdef _BUCKETIZE
+
+	bucketize_features * bdevice;
+
+#endif
+
+	Surf(int initialPoints, int i_height, int i_width,  int octaves,
            int intervals, int sample_step, float threshold, 
            cl_kernel* kernel_list);
 

@@ -164,6 +164,9 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
     // This is how much space is available for Ipts
     this->maxIpts = initialPoints;
 
+	prev_img_gray = cvCreateImage(cvSize(i_width,i_height), IPL_DEPTH_32F, 1);
+	cvSet(prev_img_gray, cvScalar(0));
+
 #ifdef _ORTN_CHECK
 
     odevice = new compare_ortn;
@@ -180,11 +183,23 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	adevice = new compare_images;
 	adevice->configure_analysis_subdevice_cpu();
 	adevice->init_app_profiler(cl_profiler_ptr());
+	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
 	adevice->init_buffers(i_height*i_width*sizeof(float));
 	adevice->set_device_state(ENABLED);
+	adevice->set_feature_count_threshold(100,this->d_length);
+
 
 #endif
+
+#ifdef _BUCKETIZE
+	bdevice = new bucketize_features;
+	bdevice->configure_analysis_device_gpu(cl_getContext());
+	bdevice->init_app_profiler(cl_profiler_ptr());
+	bdevice->build_analysis_kernel("analysis-CLSource/bucketize-features.cl","bucketize_features",0);
+
+#endif
+	printf("Leaving constructor\n");
 
 }
 
@@ -594,7 +609,6 @@ static int pid = 0;
 
 void Surf::run(IplImage* img, bool upright)
 {
-
     if (upright)
     {
         // Extract upright (i.e. not rotation invariant) descriptors
@@ -610,8 +624,10 @@ void Surf::run(IplImage* img, bool upright)
     int width = img->width;
 
  	//Skip the 1st frame
-    if(prev_img_gray != NULL)
-    {
+    //if(prev_img_gray != NULL)
+    //{
+    //    	printf("Entering here\n");
+    //    	getchar();
 
 	    //	prev_img_temp = getGray(prev_img);
 		//for(int i = 0; i< ((img_gray->height)*(img_gray->width)); i++)
@@ -621,7 +637,6 @@ void Surf::run(IplImage* img, bool upright)
 		//			printf("Prev Img %f \n",t[i]);
 		//}
 #ifdef _IMAGE_COMPARE
-
 		adevice->assign_buffers_copy(
 							(float *)prev_img_gray->imageData,
 							(float *)img_gray->imageData,
@@ -633,7 +648,7 @@ void Surf::run(IplImage* img, bool upright)
 		set_pipeline_state(new_pipeline_state);
 #endif
 
-    }
+    //}
     //cl_sync();
     printf("Pipeline State %d \n",pipeline_state);
     if( pipeline_state == ENABLED)
@@ -669,6 +684,9 @@ void Surf::run(IplImage* img, bool upright)
 
 		//printf("There were %d interest points\n", this->numIpts);
 
+#ifdef _IMAGE_COMPARE
+		adevice->track_feature_count();
+#endif
 		// Main SURF-64 loop assigns orientations and gets descriptors
 		if(this->numIpts==0) return;
 
@@ -679,19 +697,17 @@ void Surf::run(IplImage* img, bool upright)
 		this->createDescriptors(img->width, img->height);
 
 #ifdef _ORTN_CHECK
-	    if(prev_img_gray != NULL)
-	    {
-	    	float * t = (float *)malloc(sizeof(float)*100);
-	    	float * u = (float *)malloc(sizeof(float)*100);
-			odevice->assign_buffers_copy(
-								t,
-								u,
-								100*sizeof(float));
-			odevice->configure_analysis_kernel(100);
-			odevice->inject_analysis();
+//	    if(prev_img_gray != NULL)
+//	    {
+		float * t = (float *)malloc(sizeof(float)*100);
+		float * u = (float *)malloc(sizeof(float)*100);
+		odevice->assign_buffers_copy( t, u,
+							100*sizeof(float));
+		odevice->configure_analysis_kernel(100);
+		odevice->inject_analysis();
 
-			run_orientation_stage = odevice->get_analysis_result() ;
-	    }
+		run_orientation_stage = odevice->get_analysis_result() ;
+	    //}
 		//! This function passes information to SURF
 #endif
 
@@ -702,9 +718,20 @@ void Surf::run(IplImage* img, bool upright)
     	//printf("Skipping SURF \n");
     }
 #ifdef _ORTN_CHECK
-	adevice->app_profiler->markPhase(pid);
+
+    clFinish(cl_getCommandQueue());
+    adevice->app_profiler->markPhase(pid);
 	pid = pid+1;
+	//cvCopyImage(img_gray,prev_img_gray);
+
+#else
+
+	EventList * eprofiler = cl_profiler_ptr();
+	eprofiler->markPhase(pid);
+	pid = pid+1;
+
 #endif
+//
     //printf("Runcount vs Skipcount %d\t %d\n",runcount,skipcount);
    // getchar();
 

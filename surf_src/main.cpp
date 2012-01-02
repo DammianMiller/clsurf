@@ -355,8 +355,6 @@ int mainImage(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
 int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* iptsPath)
 {
 
-    printf("Running a Video\n");
-
     // Open the video or webcam
     CvCapture* capture;
     if(inputImage == NULL)
@@ -415,7 +413,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
 
     // Limit the loop to 1000 iterations
     int limit = 1000;
-    surf->prev_img_gray = NULL;
+    //surf->prev_img_gray = NULL;
     while(limit--)
     {
         // Sanity check frame sizes

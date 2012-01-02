@@ -99,6 +99,8 @@ static EventList* events = NULL;
 static bool eventsEnabled = false;
 
 
+
+
 //-------------------------------------------------------
 //          Initialization and Cleanup
 //-------------------------------------------------------
@@ -210,9 +212,9 @@ cl_context cl_init(char devicePreference)
     cl_uint chosen_platform, chosen_device;
     // UNCOMMENT the following two lines to manually select device each time
     printf("Enter Platform and Device No (Seperated by Space) \n");
-    //scanf("%d %d", &chosen_platform, &chosen_device);
-    chosen_platform = 0;
-    chosen_device = 0;
+    scanf("%d %d", &chosen_platform, &chosen_device);
+    //chosen_platform = 0;
+    //chosen_device = 0;
     printf("Using Platform %d, Device %d \n", chosen_platform, chosen_device);
 
     // Do a sanity check of platform/device selection
@@ -256,6 +258,15 @@ cl_context cl_init(char devicePreference)
     return context;
 }
 
+cl_command_queue cl_getCommandQueue()
+{
+	return commandQueue;
+}
+
+cl_context cl_getContext()
+{
+	return context;
+}
 /*!
     Release all resources that the user doesn't have access to.
 */
