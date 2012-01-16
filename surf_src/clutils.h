@@ -92,7 +92,7 @@ void    cl_freeProgram(cl_program program);
 
 // Performs a clFinish on the command queue
 void    cl_sync();
-
+cl_context * cl_getContext_add();
 cl_context cl_getContext();
 cl_command_queue cl_getCommandQueue();
 EventList * cl_profiler_ptr();

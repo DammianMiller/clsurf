@@ -94,7 +94,7 @@ void compare_ortn::configure_analysis_kernel( int numIpts)
 	kernel_vec.at(0)->dim_globalws = 1;
 	kernel_vec.at(0)->dim_localws = 1;
 	kernel_vec.at(0)->localws[0] = 16;
-	printf("No of ipts %d as seen from AD\n",numIpts);
+	//printf("No of ipts %d as seen from AD\n",numIpts);
 	kernel_vec.at(0)->globalws[0] = idivup(numIpts,kernel_vec.at(0)->localws[0]);
 
 	kernel_vec.at(0)->localmemsize = (sizeof(float)*(kernel_vec.at(0)->localws[0]));

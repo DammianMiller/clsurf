@@ -49,9 +49,11 @@ void compare(
 	
 
 	buff[tha] = prev_img - next_img;
+	//printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
+
 	if(buff[tha] > 0.00000f)
 	{
-//		printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
+		//printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
 	}
 	// Local memory based reduction to calculate average of all the differences
 
@@ -69,7 +71,7 @@ void compare(
     if(tha == 0)
     {
     	result[get_group_id(0)] = buff[0];
-    //	printf("Result is %f\n",buff[0]);
+    	//printf("Result is %f\n",buff[0]);
     }
  
 	

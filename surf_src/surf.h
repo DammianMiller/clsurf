@@ -78,6 +78,8 @@
 
 #define _BUCKETIZE
 
+#define _USE_ANALYSIS_DEVICES
+
 //! Ipoint structure holds a interest point descriptor
 typedef struct{
         float x;
@@ -126,6 +128,7 @@ class Surf {
 
     ~Surf();
     
+    void reset_phase();
     //! Compute the integral image
     void computeIntegralImage(IplImage* source);
     

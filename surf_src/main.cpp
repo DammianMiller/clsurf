@@ -412,6 +412,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     // ---------- Main capture loop -----------
 
     // Limit the loop to 1000 iterations
+    surf->reset_phase();
     int limit = 1000;
     //surf->prev_img_gray = NULL;
     while(limit--)

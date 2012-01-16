@@ -267,6 +267,12 @@ cl_context cl_getContext()
 {
 	return context;
 }
+
+cl_context * cl_getContext_add()
+{
+	return &context;
+}
+
 /*!
     Release all resources that the user doesn't have access to.
 */

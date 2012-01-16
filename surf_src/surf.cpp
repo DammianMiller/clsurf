@@ -86,6 +86,8 @@ const float Surf::gauss25[] = {
     0.00318131834134f, 0.00250251364222f, 0.00167748505986f, 0.00095819467066f, 0.00046640341759f, 0.00019345616757f, 0.00006837798818f,
     0.00131955648461f, 0.00103799989504f, 0.00069579213743f, 0.00039744277546f, 0.00019345616757f, 0.00008024231247f, 0.00002836202103f};
 
+static int pid = 0;
+
 
 //! Constructor
 Surf::Surf(int initialPoints, int i_height, int i_width, int octaves, 
@@ -193,16 +195,32 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 #endif
 
 #ifdef _BUCKETIZE
+
 	bdevice = new bucketize_features;
 	bdevice->configure_analysis_device_gpu(cl_getContext());
+	//bdevice->configure_analysis_subdevice_cpu();
 	bdevice->init_app_profiler(cl_profiler_ptr());
 	bdevice->build_analysis_kernel("analysis-CLSource/bucketize-features.cl","bucketize_features",0);
+	bdevice->init_buffers(1024);
+	bdevice->set_device_state(ENABLED);
 
 #endif
+
+
 	printf("Leaving constructor\n");
 
 }
 
+void Surf::reset_phase()
+{
+	pid = pid+1;
+
+	EventList * eprofiler = cl_profiler_ptr();
+	eprofiler->markPhase(pid);
+	pid = pid+1;
+
+
+}
 
 //! Destructor
 Surf::~Surf() {
@@ -605,7 +623,6 @@ void Surf::set_pipeline_state(bool new_pipeline_state)
     \param upright Switch for future functionality of upright surf
     \param fh FastHessian object
 */
-static int pid = 0;
 
 void Surf::run(IplImage* img, bool upright)
 {
@@ -637,12 +654,14 @@ void Surf::run(IplImage* img, bool upright)
 		//			printf("Prev Img %f \n",t[i]);
 		//}
 #ifdef _IMAGE_COMPARE
+
 		adevice->assign_buffers_copy(
 							(float *)prev_img_gray->imageData,
 							(float *)img_gray->imageData,
 							height*width*sizeof(float));
 		adevice->configure_analysis_kernel(width,height);
 		adevice->inject_analysis();
+		//printf("HEREEEEEEEE\n");
 		bool new_pipeline_state = adevice->get_analysis_result() ;
 		//! This function passes information to SURF
 		set_pipeline_state(new_pipeline_state);
@@ -697,8 +716,7 @@ void Surf::run(IplImage* img, bool upright)
 		this->createDescriptors(img->width, img->height);
 
 #ifdef _ORTN_CHECK
-//	    if(prev_img_gray != NULL)
-//	    {
+
 		float * t = (float *)malloc(sizeof(float)*100);
 		float * u = (float *)malloc(sizeof(float)*100);
 		odevice->assign_buffers_copy( t, u,
@@ -707,7 +725,7 @@ void Surf::run(IplImage* img, bool upright)
 		odevice->inject_analysis();
 
 		run_orientation_stage = odevice->get_analysis_result() ;
-	    //}
+
 		//! This function passes information to SURF
 #endif
 
@@ -717,23 +735,47 @@ void Surf::run(IplImage* img, bool upright)
     	skipcount++;
     	//printf("Skipping SURF \n");
     }
-#ifdef _ORTN_CHECK
+
+
+//#ifndef _USE_ANALYSIS_DEVICES
 
     clFinish(cl_getCommandQueue());
-    adevice->app_profiler->markPhase(pid);
-	pid = pid+1;
-	//cvCopyImage(img_gray,prev_img_gray);
-
-#else
-
 	EventList * eprofiler = cl_profiler_ptr();
+	//! Update all the app_profiler members for all the analysis_device objects
 	eprofiler->markPhase(pid);
 	pid = pid+1;
 
+//#endif
+
+#ifdef _BUCKETIZE
+
+    bdevice->sync();
+	bdevice->assign_buffers(this->d_desc);
+    bdevice->configure_analysis_kernel(100);
+	bdevice->inject_analysis(0);
+    bdevice->sync();
+
 #endif
-//
+
+
+#ifdef _IMAGE_COMPARE
+
+    clFinish(cl_getCommandQueue());
+	pid = pid+1;
+	//    adevice->app_profiler->markPhase(pid);
+#endif
+
+#ifdef _ORTN_CHECK
+
+    clFinish(cl_getCommandQueue());
+	pid = pid+1;
+	//  odevice->app_profiler->markPhase(pid);
+	//cvCopyImage(img_gray,prev_img_gray);
+
+#endif
+	//
     //printf("Runcount vs Skipcount %d\t %d\n",runcount,skipcount);
-   // getchar();
+	// getchar();
 
 
 }
