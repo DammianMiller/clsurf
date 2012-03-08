@@ -1,7 +1,7 @@
 
 #include <CL/cl.h>
 #include "stdio.h"
-
+#include "stdlib.h"
 
 #include "analysis-devices-utils.h"
 #include "surf.h"

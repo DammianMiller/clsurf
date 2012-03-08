@@ -29,7 +29,7 @@ float read_data(	__global float * img, int W, int H,
 }
 
 __kernel
-void compare(
+void compare_ortn_adk(
 			__global float * previous, __global float * next,
 			__global float * result,
 			__local float * buff,

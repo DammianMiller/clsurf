@@ -174,7 +174,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
     odevice = new compare_ortn;
     odevice->configure_analysis_subdevice_cpu();
 	odevice->init_app_profiler(cl_profiler_ptr());
-	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare",0);
+	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare_ortn_adk",0);
 	odevice->init_buffers(1000*sizeof(float));
 	odevice->set_device_state(ENABLED);
 
@@ -185,7 +185,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	adevice = new compare_images;
 	adevice->configure_analysis_subdevice_cpu();
 	adevice->init_app_profiler(cl_profiler_ptr());
-	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext());
+	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext(),cl_getDevice());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
 	adevice->init_buffers(i_height*i_width*sizeof(float));
 	adevice->set_device_state(ENABLED);
@@ -203,6 +203,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	bdevice->build_analysis_kernel("analysis-CLSource/bucketize-features.cl","bucketize_features",0);
 	bdevice->init_buffers(1024);
 	bdevice->set_device_state(ENABLED);
+	printf("Context in surf.cpp is %p",cl_getContext());
 
 #endif
 
@@ -646,29 +647,30 @@ void Surf::run(IplImage* img, bool upright)
     //    	printf("Entering here\n");
     //    	getchar();
 
-	    //	prev_img_temp = getGray(prev_img);
-		//for(int i = 0; i< ((img_gray->height)*(img_gray->width)); i++)
-		//{
-		//	float * t = (float *)prev_img_gray->imageData;
-		//	if( t[i] >  0.0000f)
-		//			printf("Prev Img %f \n",t[i]);
-		//}
+	//	prev_img_temp = getGray(prev_img);
+	//for(int i = 0; i< ((img_gray->height)*(img_gray->width)); i++)
+	//{
+	//	float * t = (float *)prev_img_gray->imageData;
+	//	if( t[i] >  0.0000f)
+	//			printf("Prev Img %f \n",t[i]);
+	//}
+
 #ifdef _IMAGE_COMPARE
 
-		adevice->assign_buffers_copy(
-							(float *)prev_img_gray->imageData,
-							(float *)img_gray->imageData,
-							height*width*sizeof(float));
-		adevice->configure_analysis_kernel(width,height);
-		adevice->inject_analysis();
-		//printf("HEREEEEEEEE\n");
-		bool new_pipeline_state = adevice->get_analysis_result() ;
-		//! This function passes information to SURF
-		set_pipeline_state(new_pipeline_state);
+	adevice->assign_buffers_copy(
+						(float *)prev_img_gray->imageData,
+						(float *)img_gray->imageData,
+						height*width*sizeof(float));
+	adevice->configure_analysis_kernel(width,height);
+	adevice->inject_analysis();
+	//printf("HEREEEEEEEE\n");
+	bool new_pipeline_state = adevice->get_analysis_result() ;
+	//! This function passes information to SURF
+	set_pipeline_state(new_pipeline_state);
+
 #endif
 
-    //}
-    //cl_sync();
+
     printf("Pipeline State %d \n",pipeline_state);
     if( pipeline_state == ENABLED)
     {
@@ -751,7 +753,7 @@ void Surf::run(IplImage* img, bool upright)
 
     bdevice->sync();
 	bdevice->assign_buffers(this->d_desc);
-    bdevice->configure_analysis_kernel(100);
+    bdevice->configure_analysis_kernel(512);
 	bdevice->inject_analysis(0);
     bdevice->sync();
 

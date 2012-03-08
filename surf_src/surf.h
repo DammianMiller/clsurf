@@ -74,9 +74,9 @@
 
 #define _IMAGE_COMPARE
 
-#define _ORTN_CHECK
+//#define _ORTN_CHECK
 
-#define _BUCKETIZE
+//#define _BUCKETIZE
 
 #define _USE_ANALYSIS_DEVICES
 

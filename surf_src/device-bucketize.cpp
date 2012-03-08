@@ -44,7 +44,7 @@ void bucketize_features::configure_analysis_kernel( int  n_features)
 	ad_setKernelArg(getKernel(0),4,sizeof(cl_uint),&no_of_buckets);
 	ad_setKernelArg(getKernel(0),5,sizeof(cl_uint),&max_feature_per_bucket);
 
-	kernel_vec.at(0)->localws[0]= 1;
+	kernel_vec.at(0)->localws[0]= 16;
 	kernel_vec.at(0)->localws[1]= 1;
 	kernel_vec.at(0)->globalws[0]= n_features;
 	kernel_vec.at(0)->globalws[1]= 1;

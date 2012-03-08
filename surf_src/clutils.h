@@ -96,6 +96,8 @@ cl_context * cl_getContext_add();
 cl_context cl_getContext();
 cl_command_queue cl_getCommandQueue();
 EventList * cl_profiler_ptr();
+//! Return the chosen SURF device
+cl_device_id cl_getDevice();
 //-------------------------------------------------------
 // Memory allocation
 //-------------------------------------------------------

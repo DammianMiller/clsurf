@@ -1299,7 +1299,11 @@ int cl_errChk(const cl_int status, const char * msg, bool exitOnErr)
 //-------------------------------------------------------
 //          Platform and device information
 //-------------------------------------------------------
+ cl_device_id cl_getDevice()
+ {
+	 return device;
 
+ }
 //! Returns true if AMD is the device vendor
 bool cl_deviceIsAMD(cl_device_id dev) {
 
