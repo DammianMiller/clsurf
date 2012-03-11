@@ -57,8 +57,6 @@
 #include "clutils.h"
 #include "utils.h"
 #include "eventlist.h"
-#include "device-compare-images.h"
-#include "device-compare-ortn.h"
 #include "stdio.h"
 
 #define DESC_SIZE 64
@@ -183,7 +181,8 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 #ifdef _IMAGE_COMPARE
 
 	adevice = new compare_images;
-	adevice->configure_analysis_subdevice_cpu();
+	//adevice->configure_analysis_subdevice_cpu();
+	adevice->configure_analysis_rootdevice();
 	adevice->init_app_profiler(cl_profiler_ptr());
 	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext(),cl_getDevice());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);

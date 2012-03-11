@@ -437,7 +437,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
         ipts = surf->retrieveDescriptors();
 
         // Draw the detected points
-        drawIpoints(frame, *ipts);
+        //drawIpoints(frame, *ipts);
         
         // Draw the FPS figure
         drawFPS(frame);

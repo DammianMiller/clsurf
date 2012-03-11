@@ -37,10 +37,16 @@ void compare(
 {
 	int x;
     // get the x & y indexes and absolute
-	//printf("reach stride");
+
 
 	int thx = get_local_id(0);
     int tha = get_local_id(1) * get_local_size(0) + thx;
+    //printf("Tha %d W %d H %d \n",tha,W,H);
+
+    if(get_global_id(0) >= W )
+    	return;
+    if(get_global_id(1) >= H )
+		return;
 
 	float prev_img = //0;
 			read_data(previous, W,H, get_global_id(0), get_global_id(1));
