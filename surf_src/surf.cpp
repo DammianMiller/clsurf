@@ -182,10 +182,13 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 
 	adevice = new compare_images;
 	//adevice->configure_analysis_subdevice_cpu();
-	adevice->configure_analysis_rootdevice();
+	//! This function call will create either a full CPU or a full GPU Queue
+	//adevice->configure_analysis_rootdevice();
+	adevice->configure_analysis_device_gpu(cl_getContext());
 	adevice->init_app_profiler(cl_profiler_ptr());
 	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext(),cl_getDevice());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
+	adevice->set_compare_threshold();
 	adevice->init_buffers(i_height*i_width*sizeof(float));
 	adevice->set_device_state(ENABLED);
 	adevice->set_feature_count_threshold(100,this->d_length);
@@ -207,7 +210,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 #endif
 
 
-	printf("Leaving constructor\n");
+
 
 }
 
@@ -705,7 +708,7 @@ void Surf::run(IplImage* img, bool upright)
 		//printf("There were %d interest points\n", this->numIpts);
 
 #ifdef _IMAGE_COMPARE
-		adevice->track_feature_count();
+		//adevice->track_feature_count();
 #endif
 		// Main SURF-64 loop assigns orientations and gets descriptors
 		if(this->numIpts==0) return;
@@ -738,15 +741,15 @@ void Surf::run(IplImage* img, bool upright)
     }
 
 
-//#ifndef _USE_ANALYSIS_DEVICES
+#ifndef _USE_ANALYSIS_DEVICES
 
     clFinish(cl_getCommandQueue());
 	EventList * eprofiler = cl_profiler_ptr();
 	//! Update all the app_profiler members for all the analysis_device objects
-	eprofiler->markPhase(pid);
+	//eprofiler->markPhase(pid);
 	pid = pid+1;
 
-//#endif
+#endif
 
 #ifdef _BUCKETIZE
 
@@ -764,6 +767,8 @@ void Surf::run(IplImage* img, bool upright)
     clFinish(cl_getCommandQueue());
 	pid = pid+1;
 	//    adevice->app_profiler->markPhase(pid);
+	//cvCopyImage(img_gray,prev_img_gray);
+
 #endif
 
 #ifdef _ORTN_CHECK

@@ -74,12 +74,15 @@ void compare(
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     barrier(CLK_LOCAL_MEM_FENCE);
-    if(tha == 0)
+    if(get_local_id(0) == 0)
     {
-    	result[get_group_id(0)] = buff[0];
+    	//	printf("Locn is %d \n",get_group_id(0));
     	//printf("Result is %f\n",buff[0]);
+    	result[get_group_id(0)] = buff[0];
+
     }
- 
+    barrier(CLK_LOCAL_MEM_FENCE);
+
 	
 }
 
