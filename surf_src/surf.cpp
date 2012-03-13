@@ -743,7 +743,7 @@ void Surf::run(IplImage* img, bool upright)
 		clFinish(cl_getCommandQueue());
 		odevice->assign_buffers_mapping( this->d_orientation, this->d_orientation,
 									1000*sizeof(float));
-		odevice->configure_analysis_kernel(100);
+		odevice->configure_analysis_kernel(1000);
 		if(run_orientation_stage == ENABLED)
 			odevice->inject_analysis();
 		bool old_orientation_status = run_orientation_stage;
