@@ -170,7 +170,8 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 #ifdef _ORTN_CHECK
 
     odevice = new compare_ortn;
-    odevice->configure_analysis_subdevice_cpu();
+    //odevice->configure_analysis_subdevice_cpu();
+    odevice->configure_analysis_rootdevice();
 	odevice->init_app_profiler(cl_profiler_ptr());
 	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare_ortn_adk",0);
 	odevice->init_buffers(1000*sizeof(float));
@@ -387,41 +388,43 @@ void Surf::computeIntegralImage(IplImage* img)
 */
 void Surf::createDescriptors(int i_width, int i_height)
 {
+	if(run_orientation_stage == ENABLED)
+	{
+		const size_t threadsPerWG = 81;
+		const size_t wgsPerIpt = 16;
 
-    const size_t threadsPerWG = 81;
-    const size_t wgsPerIpt = 16;
+		cl_kernel surf64Descriptor_kernel = this->kernel_list[KERNEL_SURF_DESC];
 
-    cl_kernel surf64Descriptor_kernel = this->kernel_list[KERNEL_SURF_DESC];
+		size_t localWorkSizeSurf64[2] = {threadsPerWG,1};
+		size_t globalWorkSizeSurf64[2] = {(wgsPerIpt*threadsPerWG),(size_t)numIpts};
 
-    size_t localWorkSizeSurf64[2] = {threadsPerWG,1};
-    size_t globalWorkSizeSurf64[2] = {(wgsPerIpt*threadsPerWG),(size_t)numIpts};
+		cl_setKernelArg(surf64Descriptor_kernel, 0, sizeof(cl_mem), (void*)&(this->d_intImage));
+		cl_setKernelArg(surf64Descriptor_kernel, 1, sizeof(int),    (void*)&i_width);
+		cl_setKernelArg(surf64Descriptor_kernel, 2, sizeof(int),    (void*)&i_height);
+		cl_setKernelArg(surf64Descriptor_kernel, 3, sizeof(cl_mem), (void*)&(this->d_scale));
+		cl_setKernelArg(surf64Descriptor_kernel, 4, sizeof(cl_mem), (void*)&(this->d_desc));
+		cl_setKernelArg(surf64Descriptor_kernel, 5, sizeof(cl_mem), (void*)&(this->d_pixPos));
+		cl_setKernelArg(surf64Descriptor_kernel, 6, sizeof(cl_mem), (void*)&(this->d_orientation));
+		cl_setKernelArg(surf64Descriptor_kernel, 7, sizeof(cl_mem), (void*)&(this->d_length));
+		cl_setKernelArg(surf64Descriptor_kernel, 8, sizeof(cl_mem), (void*)&(this->d_j));
+		cl_setKernelArg(surf64Descriptor_kernel, 9, sizeof(cl_mem), (void*)&(this->d_i));
 
-    cl_setKernelArg(surf64Descriptor_kernel, 0, sizeof(cl_mem), (void*)&(this->d_intImage));
-    cl_setKernelArg(surf64Descriptor_kernel, 1, sizeof(int),    (void*)&i_width);
-    cl_setKernelArg(surf64Descriptor_kernel, 2, sizeof(int),    (void*)&i_height);
-    cl_setKernelArg(surf64Descriptor_kernel, 3, sizeof(cl_mem), (void*)&(this->d_scale));
-    cl_setKernelArg(surf64Descriptor_kernel, 4, sizeof(cl_mem), (void*)&(this->d_desc));
-    cl_setKernelArg(surf64Descriptor_kernel, 5, sizeof(cl_mem), (void*)&(this->d_pixPos));
-    cl_setKernelArg(surf64Descriptor_kernel, 6, sizeof(cl_mem), (void*)&(this->d_orientation));
-    cl_setKernelArg(surf64Descriptor_kernel, 7, sizeof(cl_mem), (void*)&(this->d_length));
-    cl_setKernelArg(surf64Descriptor_kernel, 8, sizeof(cl_mem), (void*)&(this->d_j));
-    cl_setKernelArg(surf64Descriptor_kernel, 9, sizeof(cl_mem), (void*)&(this->d_i));
+		cl_executeKernel(surf64Descriptor_kernel, 2, globalWorkSizeSurf64,
+			localWorkSizeSurf64, "CreateDescriptors");
 
-    cl_executeKernel(surf64Descriptor_kernel, 2, globalWorkSizeSurf64,
-        localWorkSizeSurf64, "CreateDescriptors"); 
+		cl_kernel normSurf64_kernel = kernel_list[KERNEL_NORM_DESC];
 
-    cl_kernel normSurf64_kernel = kernel_list[KERNEL_NORM_DESC];
+		size_t localWorkSizeNorm64[] = {DESC_SIZE};
+		size_t globallWorkSizeNorm64[] =  {this->numIpts*DESC_SIZE};
 
-    size_t localWorkSizeNorm64[] = {DESC_SIZE};
-    size_t globallWorkSizeNorm64[] =  {this->numIpts*DESC_SIZE};
+		cl_setKernelArg(normSurf64_kernel, 0, sizeof(cl_mem), (void*)&(this->d_desc));
+		cl_setKernelArg(normSurf64_kernel, 1, sizeof(cl_mem), (void*)&(this->d_length));
 
-    cl_setKernelArg(normSurf64_kernel, 0, sizeof(cl_mem), (void*)&(this->d_desc));
-    cl_setKernelArg(normSurf64_kernel, 1, sizeof(cl_mem), (void*)&(this->d_length));
+		// Execute the descriptor normalization kernel
+		cl_executeKernel(normSurf64_kernel, 1, globallWorkSizeNorm64, localWorkSizeNorm64,
+			"NormalizeDescriptors");
 
-    // Execute the descriptor normalization kernel
-    cl_executeKernel(normSurf64_kernel, 1, globallWorkSizeNorm64, localWorkSizeNorm64,
-        "NormalizeDescriptors"); 
-
+	}
 } 
 
 
@@ -436,6 +439,7 @@ void Surf::getOrientations(int i_width, int i_height)
 {
     if(run_orientation_stage == ENABLED)
     {
+    	printf("DOING ORIENTATION\n");
 
     	cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
 		cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];
@@ -470,6 +474,8 @@ void Surf::getOrientations(int i_width, int i_height)
 		cl_executeKernel(getOrientation2, 1, globalWorkSize2, localWorkSize2,
 			"GetOrientations2");
     }
+    else
+    	printf("SKIPPING ORIENTATION\n");
 }
 
 //! Allocates the memory objects requried for the ipt descriptor information
@@ -721,14 +727,25 @@ void Surf::run(IplImage* img, bool upright)
 
 #ifdef _ORTN_CHECK
 
+		/*
 		float * t = (float *)malloc(sizeof(float)*100);
 		float * u = (float *)malloc(sizeof(float)*100);
+		for(int j=0;j<100;j++)
+		{
+			t[j] = 0.0f;
+			u[j] = 0.0f;
+		}
+
 		odevice->assign_buffers_copy( t, u,
 							100*sizeof(float));
+		*/
+		clFinish(cl_getCommandQueue());
+		odevice->assign_buffers_mapping( this->d_orientation, this->d_orientation,
+									100*sizeof(float));
 		odevice->configure_analysis_kernel(100);
 		odevice->inject_analysis();
-
-		run_orientation_stage = odevice->get_analysis_result() ;
+		bool old_orientation_status = run_orientation_stage;
+		run_orientation_stage = odevice->get_analysis_result(old_orientation_status) ;
 
 		//! This function passes information to SURF
 #endif

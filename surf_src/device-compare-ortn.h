@@ -29,13 +29,13 @@ private:
 public:
 	compare_ortn();
 
-	bool  get_analysis_result();
+	bool  get_analysis_result(bool);
 
 	//! This function handles initial set up only
 	//! void initialize_analysis_kernels();
 	void init_buffers(size_t mem_size);
 	void assign_buffers_copy(float * prev, float * next,size_t mem_size);
-
+	void assign_buffers_mapping(cl_mem prev, cl_mem next, size_t mem_size);
 	//! Kernel Configuration function.
 	//! Should be called before the analysis_device::inject_analysis() function
 	void configure_analysis_kernel( int  );

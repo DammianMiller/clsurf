@@ -42,6 +42,11 @@ void compare_ortn_adk(
 
 	int thx = get_local_id(0);
     int tha = get_local_id(1) * get_local_size(0) + thx;
+    if(get_global_id(0)> 100)
+    	return;
+    if(get_global_id(0)> 100)
+    	return;
+
 
 	float prev_img = //0;
 			read_data(previous, W,H, get_global_id(0), get_global_id(1));
@@ -52,7 +57,7 @@ void compare_ortn_adk(
 	buff[tha] = prev_img - next_img;
 	if(buff[tha] > 0.00000f)
 	{
-	//	printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
+		//printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
 	}
 	// Local memory based reduction to calculate average of all the differences
 
@@ -67,13 +72,13 @@ void compare_ortn_adk(
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     barrier(CLK_LOCAL_MEM_FENCE);
-    if(tha == 0)
+    if(get_local_id(0)  == 0)
     {
     	result[get_group_id(0)] = buff[0];
-    	//printf("Result is %f\n",buff[0]);
+    	printf("Result is %f\n",buff[0]);
     }
  
-	
+    barrier(CLK_LOCAL_MEM_FENCE);
 }
 
 

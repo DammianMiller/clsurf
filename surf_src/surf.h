@@ -72,9 +72,9 @@
 
 #define DESC_SIZE 64
 
-#define _IMAGE_COMPARE
+//#define _IMAGE_COMPARE
 
-//#define _ORTN_CHECK
+#define _ORTN_CHECK
 
 //#define _BUCKETIZE
 
@@ -90,7 +90,7 @@ typedef struct{
         int clusterIndex;
         float descriptor[64];
 } Ipoint;
-
+bool get_run_orientation_stage();
 typedef std::vector<Ipoint> IpVec;
 
 class Surf {

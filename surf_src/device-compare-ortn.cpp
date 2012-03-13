@@ -47,27 +47,63 @@ void compare_ortn::init_buffers(size_t mem_size)
  */
 void compare_ortn::assign_buffers_copy(float * prev, float * next, size_t mem_size)
 {
-	//! Uses the cl_map calls to map the pointers passed to the
+	//! Uses Copy calls to move data between
 	//! buffer objects
 	printf("Copy %d bytes for orntn",mem_size);
 
  	copyHostToAd(p_features,prev,mem_size);
-//	copyHostToAd(n_features,next,mem_size);
+	copyHostToAd(n_features,next,mem_size);
 
 	//p_img = NULL;
 	//n_img = NULL;
 }
 
 
-
-bool compare_ortn::get_analysis_result()
+/**
+ * Assign data to the analysis device's buffers
+ * @param prev Previous image
+ * @param next Next image
+ * @param mem_size Data size
+ */
+void compare_ortn::assign_buffers_mapping(cl_mem prev, cl_mem next, size_t mem_size)
 {
+	//! Uses the cl_map calls to map the pointers passed to the
+
+	printf("Assigning %d bytes for orntn",mem_size);
+	p_features = prev;
+	n_features = next;
+
+ 	//copyHostToAd(p_features,prev,mem_size);
+	//copyHostToAd(n_features,next,mem_size);
+
+	//p_img = NULL;
+	//n_img = NULL;
+}
+
+//int foo = 0;
+bool compare_ortn::get_analysis_result(bool run_orientation_stage_status_ip)
+{
+	static int foo = 0;
+	if(run_orientation_stage_status_ip == DISABLED)
+	{
+		foo = foo+1;
+		if(foo%5 == 0)
+		{
+			return ENABLED;
+		}
+		else
+		{	return DISABLED;
+
+		}
+
+	}
 	bool return_state;
 	//! Read results from processing
 	//! Assume that the kernel injection is finished now
 	sync();
  	float * data = (float *)mapBuffer(opbuff.buffer, opbuff.mem_size,CL_MAP_READ);
-	float diff_value = 0.0f;
+ 	sync();
+ 	float diff_value = 0.0f;
 	//for(int i=0;i < (kernel_vec.at(0)->globalws[0]); i++)
 	for(int i=0;i < 100; i++)
 	{
@@ -78,7 +114,7 @@ bool compare_ortn::get_analysis_result()
 		return_state = ENABLED;
 	else
 		return_state = DISABLED;
-	//printf("Diff is %f \n",diff_value);
+	printf("Diff is %f \n",diff_value);
 	return return_state;
 }
 
