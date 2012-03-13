@@ -171,7 +171,8 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 
     odevice = new compare_ortn;
     //odevice->configure_analysis_subdevice_cpu();
-    odevice->configure_analysis_rootdevice();
+    //odevice->configure_analysis_rootdevice();
+    odevice->configure_analysis_device_cpu(cl_getContext());
 	odevice->init_app_profiler(cl_profiler_ptr());
 	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare_ortn_adk",0);
 	odevice->init_buffers(1000*sizeof(float));
@@ -741,9 +742,10 @@ void Surf::run(IplImage* img, bool upright)
 		*/
 		clFinish(cl_getCommandQueue());
 		odevice->assign_buffers_mapping( this->d_orientation, this->d_orientation,
-									100*sizeof(float));
+									1000*sizeof(float));
 		odevice->configure_analysis_kernel(100);
-		odevice->inject_analysis();
+		if(run_orientation_stage == ENABLED)
+			odevice->inject_analysis();
 		bool old_orientation_status = run_orientation_stage;
 		run_orientation_stage = odevice->get_analysis_result(old_orientation_status) ;
 

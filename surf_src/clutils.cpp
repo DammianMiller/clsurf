@@ -231,7 +231,8 @@ cl_context cl_init(char devicePreference)
     // Create the context
     cl_context_properties cps[3] = {CL_CONTEXT_PLATFORM, 
         (cl_context_properties)(platform), 0};
-    context = clCreateContext(cps, 1, &device, NULL, NULL, &status);	
+    //context = clCreateContext(cps, 1, &device, NULL, NULL, &status);
+    context = clCreateContext(cps, numDevices[chosen_platform], devices[chosen_platform], NULL, NULL, &status);
     cl_errChk(status, "Creating context", true);
  
     // Create the command queue

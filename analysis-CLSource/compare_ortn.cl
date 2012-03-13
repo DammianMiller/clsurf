@@ -57,8 +57,9 @@ void compare_ortn_adk(
 	buff[tha] = prev_img - next_img;
 	if(buff[tha] > 0.00000f)
 	{
-		//printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
+
 	}
+	printf("Prev img %f\t Next Img %f \n",prev_img,next_img);
 	// Local memory based reduction to calculate average of all the differences
 
  	barrier(CLK_LOCAL_MEM_FENCE);
@@ -75,7 +76,7 @@ void compare_ortn_adk(
     if(get_local_id(0)  == 0)
     {
     	result[get_group_id(0)] = buff[0];
-    	printf("Result is %f\n",buff[0]);
+//    	printf("Result is %f\n",buff[0]);
     }
  
     barrier(CLK_LOCAL_MEM_FENCE);

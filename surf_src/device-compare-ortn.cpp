@@ -69,15 +69,29 @@ void compare_ortn::assign_buffers_mapping(cl_mem prev, cl_mem next, size_t mem_s
 {
 	//! Uses the cl_map calls to map the pointers passed to the
 
-	printf("Assigning %d bytes for orntn",mem_size);
-	p_features = prev;
-	n_features = next;
 
- 	//copyHostToAd(p_features,prev,mem_size);
+	printf("Assigning %d bytes for orntn",mem_size);
+	//p_features = prev;
+	//n_features = next;
+	cl_int status = CL_SUCCESS;
+
+	status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
+	 	prev,p_features,
+	 	0,0,
+	 	mem_size,
+	 	0,NULL,	NULL);
+	ad_errChk(status,"error copying buffer1",TRUE);
+	status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
+	 	next,n_features,
+	 	0,0,
+	 	mem_size,
+	 	0,NULL,	NULL);
+	ad_errChk(status,"error copying buffer2",TRUE);
+	clFinish(cl_getCommandQueue());
+	//copyHostToAd(p_features,prev,mem_size);
 	//copyHostToAd(n_features,next,mem_size);
 
-	//p_img = NULL;
-	//n_img = NULL;
+
 }
 
 //int foo = 0;
