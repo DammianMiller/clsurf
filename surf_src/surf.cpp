@@ -175,6 +175,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
     odevice->configure_analysis_device_cpu(cl_getContext());
 	odevice->init_app_profiler(cl_profiler_ptr());
 	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare_ortn_adk",0);
+	odevice->set_ortn_compare_threshold();
 	odevice->init_buffers(1000*sizeof(float));
 	odevice->set_device_state(ENABLED);
 
@@ -190,7 +191,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	adevice->init_app_profiler(cl_profiler_ptr());
 	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext(),cl_getDevice());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
-	adevice->set_compare_threshold();
+	adevice->set_ortn_compare_threshold();
 	adevice->init_buffers(i_height*i_width*sizeof(float));
 	adevice->set_device_state(ENABLED);
 	adevice->set_feature_count_threshold(100,this->d_length);
@@ -680,10 +681,10 @@ void Surf::run(IplImage* img, bool upright)
 #endif
 
 
-    printf("Pipeline State %d \n",pipeline_state);
+    //printf("Pipeline State %d \n",pipeline_state);
     if( pipeline_state == ENABLED)
     {
-		printf("Image pointers %p \t %p \n",prev_img_gray,img);
+		//printf("Image pointers %p \t %p \n",prev_img_gray,img);
 
 		//prev_img_gray = img_gray;
 		//prev_img_gray = copyImage(img_gray);
@@ -717,6 +718,7 @@ void Surf::run(IplImage* img, bool upright)
 #ifdef _IMAGE_COMPARE
 		//adevice->track_feature_count();
 #endif
+
 		// Main SURF-64 loop assigns orientations and gets descriptors
 		if(this->numIpts==0) return;
 
@@ -742,8 +744,8 @@ void Surf::run(IplImage* img, bool upright)
 		*/
 		clFinish(cl_getCommandQueue());
 		odevice->assign_buffers_mapping( this->d_orientation, this->d_orientation,
-									1000*sizeof(float));
-		odevice->configure_analysis_kernel(1000);
+				(this->numIpts)*sizeof(float));
+		odevice->configure_analysis_kernel(this->numIpts);
 		if(run_orientation_stage == ENABLED)
 			odevice->inject_analysis();
 		bool old_orientation_status = run_orientation_stage;

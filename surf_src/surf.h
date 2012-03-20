@@ -152,6 +152,7 @@ class Surf {
 
     void set_pipeline_state(bool new_pipeline_state);
 
+
   private:
 
     bool pipeline_state;

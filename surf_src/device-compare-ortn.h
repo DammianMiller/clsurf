@@ -26,6 +26,8 @@ private:
 	cl_mem n_features;
 
 	cl_mem feature_count;
+
+	bool run_orientation_stage_status;
 public:
 	compare_ortn();
 
@@ -40,6 +42,7 @@ public:
 	//! Should be called before the analysis_device::inject_analysis() function
 	void configure_analysis_kernel( int  );
 
+	void set_ortn_compare_threshold();
 
 	//! Not used.
 	//! Has been disabled for now since the user cannot control when the

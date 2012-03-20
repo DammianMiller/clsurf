@@ -16,7 +16,8 @@ compare_ortn::compare_ortn():analysis_device()
 {
 	printf("Derived Class - Compare Orientation Device\n");
 	THRESHOLD = 2.0f;
-
+	set_device_state(ENABLED);
+	run_orientation_stage_status = ENABLED;
 }
 
 void compare_ortn::init_buffers(size_t mem_size)
@@ -49,7 +50,7 @@ void compare_ortn::assign_buffers_copy(float * prev, float * next, size_t mem_si
 {
 	//! Uses Copy calls to move data between
 	//! buffer objects
-	printf("Copy %d bytes for orntn",mem_size);
+	//print_warning("Copy %d bytes for orntn",mem_size);
 
  	copyHostToAd(p_features,prev,mem_size);
 	copyHostToAd(n_features,next,mem_size);
@@ -70,24 +71,27 @@ void compare_ortn::assign_buffers_mapping(cl_mem prev, cl_mem next, size_t mem_s
 	//! Uses the cl_map calls to map the pointers passed to the
 
 
-	printf("Assigning %d bytes for orntn",mem_size);
+	//printf("Assigning %d bytes for orntn",mem_size);
 	//p_features = prev;
 	//n_features = next;
-	cl_int status = CL_SUCCESS;
+	if(run_orientation_stage_status == ENABLED)
+	{
+		cl_int status = CL_SUCCESS;
+		status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
+			prev,p_features,
+			0,0,
+			mem_size,
+			0,NULL,	NULL);
+		ad_errChk(status,"error copying buffer1",TRUE);
+		status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
+			next,n_features,
+			0,0,
+			mem_size,
+			0,NULL,	NULL);
+		ad_errChk(status,"error copying buffer2",TRUE);
 
-	status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
-	 	prev,p_features,
-	 	0,0,
-	 	mem_size,
-	 	0,NULL,	NULL);
-	ad_errChk(status,"error copying buffer1",TRUE);
-	status =  clEnqueueCopyBuffer (	cl_getCommandQueue(),
-	 	next,n_features,
-	 	0,0,
-	 	mem_size,
-	 	0,NULL,	NULL);
-	ad_errChk(status,"error copying buffer2",TRUE);
-	clFinish(cl_getCommandQueue());
+	}
+	//clFinish(cl_getCommandQueue());
 	//copyHostToAd(p_features,prev,mem_size);
 	//copyHostToAd(n_features,next,mem_size);
 
@@ -103,33 +107,37 @@ bool compare_ortn::get_analysis_result(bool run_orientation_stage_status_ip)
 		foo = foo+1;
 		if(foo%5 == 0)
 		{
-			return ENABLED;
+			run_orientation_stage_status = ENABLED;
+			return run_orientation_stage_status;
 		}
 		else
-		{	return DISABLED;
-
+		{
+			run_orientation_stage_status = DISABLED;
+			return run_orientation_stage_status;
 		}
 
 	}
-	bool return_state;
+
+
 	//! Read results from processing
 	//! Assume that the kernel injection is finished now
 	sync();
- 	float * data = (float *)mapBuffer(opbuff.buffer, opbuff.mem_size,CL_MAP_READ);
+	int mem_to_map = sizeof(float)*(kernel_vec.at(0)->globalws[0]/kernel_vec.at(0)->localws[0]);
+ 	float * data = (float *)mapBuffer(opbuff.buffer,mem_to_map,CL_MAP_READ);
  	sync();
  	float diff_value = 0.0f;
 	//for(int i=0;i < (kernel_vec.at(0)->globalws[0]); i++)
-	for(int i=0;i < 100; i++)
+	for(int i=0;i < (kernel_vec.at(0)->globalws[0]/kernel_vec.at(0)->localws[0]) ; i++)
 	{
  		diff_value = diff_value + data[i];
 	}
 
 	if(abs(diff_value) > THRESHOLD)
-		return_state = ENABLED;
+		run_orientation_stage_status = ENABLED;
 	else
-		return_state = DISABLED;
+		run_orientation_stage_status = DISABLED;
 	printf("Diff is %f \n",diff_value);
-	return return_state;
+	return run_orientation_stage_status;
 }
 
 //! Configure the analysis kernel.
@@ -143,7 +151,7 @@ void compare_ortn::configure_analysis_kernel( int numIpts)
 	//! If present_image and next_image
 	kernel_vec.at(0)->dim_globalws = 1;
 	kernel_vec.at(0)->dim_localws = 1;
-	kernel_vec.at(0)->localws[0] = 16;
+	kernel_vec.at(0)->localws[0] = 64;
 	//printf("No of ipts %d as seen from AD\n",numIpts);
 	kernel_vec.at(0)->globalws[0] = idivup(numIpts,kernel_vec.at(0)->localws[0]);
 
@@ -154,12 +162,17 @@ void compare_ortn::configure_analysis_kernel( int numIpts)
 	ad_setKernelArg(getKernel(0), 2,sizeof(cl_mem),(void *)&(opbuff.buffer));
 	ad_setKernelArg(getKernel(0), 3,kernel_vec.at(0)->localmemsize, NULL);
 	ad_setKernelArg(getKernel(0), 4,sizeof(cl_int), (void *)&numIpts);
-	ad_setKernelArg(getKernel(0), 5,sizeof(cl_int), (void *)&numIpts);
+	//ad_setKernelArg(getKernel(0), 5,sizeof(cl_int), (void *)&numIpts);
 
 
 }
 
 
+void compare_ortn::set_ortn_compare_threshold()
+{
+	printf("Enter Threshold\n");
+	scanf("%f",&THRESHOLD);
+}
 
 //! Input- Feature set
 //! Output- Sorted set (sorted as per all Xcord followed by all Ycoord)
