@@ -72,9 +72,11 @@
 
 #define DESC_SIZE 64
 
+#define _ENABLE_THROTTLE
+
 //#define _IMAGE_COMPARE
 
-#define _ORTN_CHECK
+//#define _ORTN_CHECK
 
 //#define _BUCKETIZE
 
@@ -152,7 +154,7 @@ class Surf {
 
     void set_pipeline_state(bool new_pipeline_state);
 
-
+    void throttle_threshold();
   private:
 
     bool pipeline_state;

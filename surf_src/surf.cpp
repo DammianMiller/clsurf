@@ -439,10 +439,13 @@ void Surf::createDescriptors(int i_width, int i_height)
 */
 void Surf::getOrientations(int i_width, int i_height)
 {
+//
+
     if(run_orientation_stage == ENABLED)
     {
+#ifdef _ORTN_CHECK
     	printf("DOING ORIENTATION\n");
-
+#endif
     	cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
 		cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];
 
@@ -475,9 +478,14 @@ void Surf::getOrientations(int i_width, int i_height)
 		// Execute the kernel
 		cl_executeKernel(getOrientation2, 1, globalWorkSize2, localWorkSize2,
 			"GetOrientations2");
+
     }
     else
-    	printf("SKIPPING ORIENTATION\n");
+    {
+    	#ifdef _ORTN_CHECK
+    		printf("SKIPPING ORIENTATION\n");
+		#endif
+    }
 }
 
 //! Allocates the memory objects requried for the ipt descriptor information
@@ -624,7 +632,26 @@ void Surf::set_pipeline_state(bool new_pipeline_state)
 	pipeline_state = new_pipeline_state;
 }
 
+void Surf::throttle_threshold()
+{
+#ifdef _ENABLE_THROTTLE
+	printf("NumIpts \t\t %d\n",numIpts);
+	if(numIpts > 1000)
+	{
+		//printf("NumIpts \t\t %d\n",numIpts);
+		//printf("Double Threshold\n");
+		float new_threshold = (this->fh->get_threshold())*2.0f;
+		this->fh->set_threshold(new_threshold);
+	}
+	if(numIpts < 300)
+	{
+		//printf("Half Threshold\n");
+		float new_threshold = (this->fh->get_threshold())/2.0f;
+		this->fh->set_threshold(new_threshold);
+	}
+#endif
 
+}
 
 //! Function that builds vector of interest points.  This is the main SURF function
 //! that will be called for any type of input.
@@ -697,6 +724,8 @@ void Surf::run(IplImage* img, bool upright)
 		// GPU mem transfer: copies back the number of ipoints
 		this->numIpts = this->fh->getIpoints(img, this->d_intImage, this->d_laplacian,
 							this->d_pixPos, this->d_scale, this->maxIpts);
+
+		this->throttle_threshold();
 
 		// Verify that there was enough space allocated for the number of
 		// Ipoints found
@@ -773,6 +802,9 @@ void Surf::run(IplImage* img, bool upright)
 #endif
 
 #ifdef _BUCKETIZE
+    // Get the ipoints
+    IpVec * nextIpts = this->retrieveDescriptors();
+
 
     bdevice->sync();
 	bdevice->assign_buffers(this->d_desc);

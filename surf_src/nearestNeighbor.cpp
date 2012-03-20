@@ -31,7 +31,7 @@
  *                                                                            *
  * If you use the software (in whole or in part), you shall adhere to all     *
  * applicable U.S., European, and other export laws, including but not        *
- * limited to the U.S. Export Administration Regulations (“EAR”), (15 C.F.R.  *
+ * limited to the U.S. Export Administration Regulations (ï¿½EARï¿½), (15 C.F.R.  *
  * Sections 730 through 774), and E.U. Council Regulation (EC) No 1334/2000   *
  * of 22 June 2000.  Further, pursuant to Section 740.6 of the EAR, you       *
  * hereby certify that, except pursuant to a license granted by the United    *
@@ -46,13 +46,14 @@
  *(currently found in Supplement 1 to Part 774 of EAR).  For the most current *
  * Country Group listings, or for additional information about the EAR or     *
  * your obligations under those regulations, please refer to the U.S. Bureau  *
- * of Industry and Security’s website at http://www.bis.doc.gov/.             *
+ * of Industry and Securityï¿½s website at http://www.bis.doc.gov/.             *
  \****************************************************************************/
 
 #include <stdio.h>
 
 #include "nearestNeighbor.h"
 #include "utils.h"
+//#include "bucketize_test.h"
 
 std::vector<distPoint>* findNearestNeighbors(
 	IpVec &ipts1, IpVec &ipts2,
@@ -98,6 +99,7 @@ std::vector<distPoint>* findNearestNeighbors(
     size_t globalWorkSize[1];
     globalWorkSize[0] = ipts1.size()*64;
     localWorkSize[0] = 64;
+
 
     // Run the nearest neighbor kernel
     cl_executeKernel(NN_kernel, 1, globalWorkSize, localWorkSize,

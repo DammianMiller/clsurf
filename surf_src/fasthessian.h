@@ -106,6 +106,8 @@ class FastHessian {
     //! Resets the information required for the next frame to compute
     void reset();
 
+    void set_threshold(float k);
+    float get_threshold();
   private:
 
     void createResponseMap(int octaves, int imgWidth, int 

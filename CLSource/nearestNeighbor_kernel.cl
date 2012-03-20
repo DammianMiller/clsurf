@@ -31,7 +31,7 @@
  *                                                                            *
  * If you use the software (in whole or in part), you shall adhere to all     *
  * applicable U.S., European, and other export laws, including but not        *
- * limited to the U.S. Export Administration Regulations (“EAR”), (15 C.F.R.  *
+ * limited to the U.S. Export Administration Regulations (ï¿½EARï¿½), (15 C.F.R.  *
  * Sections 730 through 774), and E.U. Council Regulation (EC) No 1334/2000   *
  * of 22 June 2000.  Further, pursuant to Section 740.6 of the EAR, you       *
  * hereby certify that, except pursuant to a license granted by the United    *
@@ -46,8 +46,19 @@
  *(currently found in Supplement 1 to Part 774 of EAR).  For the most current *
  * Country Group listings, or for additional information about the EAR or     *
  * your obligations under those regulations, please refer to the U.S. Bureau  *
- * of Industry and Security’s website at http://www.bis.doc.gov/.             *
+ * of Industry and Securityï¿½s website at http://www.bis.doc.gov/.             *
  \****************************************************************************/
+#ifndef __OPENCL_VERSION__
+#define __kernel
+#define __global
+#define get_global_id
+#define __local
+#define atom_add
+#define get_local_id
+#define get_local_size
+#define barrier(CLK_LOCAL_MEM_FENCE)
+#define get_group_id
+#endif
 
 typedef struct{
     int point1;

@@ -389,7 +389,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     int intervals = 4;
     int sample_step = 2;
     float threshold = THRES;
-    unsigned int initialIpts = 1000;
+    unsigned int initialIpts = 10000;
 
     // Grab frame from the capture source
     frame = cvQueryFrame(capture);
@@ -474,7 +474,7 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     cvReleaseCapture(&capture);
     cvDestroyAllWindows();
     cl_cleanup();
-
+    fflush(stdout);
     return 0;
 }
 

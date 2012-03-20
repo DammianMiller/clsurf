@@ -36,9 +36,9 @@ AMD_OBJDIR     = obj/amd
 NVIDIA_OBJDIR  = obj/nvidia
 
 # Compilers
-CXX  = g++ -O3 -pg
-CC   = gcc -O3 -pg
-LINK = g++ -O3 -pg 
+CXX  = g++ -O3 
+CC   = gcc -O3
+LINK = g++ -O3 
 
 # Includes
 MISCINC := $(HOME)/clhaptic/src/libmisc

@@ -7,9 +7,14 @@ bucketize_features::bucketize_features()
 	no_of_buckets = 0;
 }
 
-void bucketize_features::assign_buffers(cl_mem input_feature_buffer)
+void bucketize_features::assign_ip_buffer(cl_mem ip_list)
 {
-	ip_feature_list = input_feature_buffer;
+	ip_feature_list = ip_list;
+}
+
+void bucketize_features::assign_op_buffer(cl_mem ip_list)
+{
+	op_feature_list = ip_list;
 }
 
 void bucketize_features::init_buffers(int ip_max_feature_count)

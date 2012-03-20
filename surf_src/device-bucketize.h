@@ -23,7 +23,8 @@ class bucketize_features : public analysis_device
 
 public:
 	bucketize_features();
-	void assign_buffers(cl_mem input_feature_buffer);
+	void assign_ip_buffer(cl_mem ip_list);
+	void assign_op_buffer(cl_mem ip_list);
 	void make_buckets();
 	void init_buffers(int);
 	void configure_analysis_kernel( int  );
