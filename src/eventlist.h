@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -62,7 +62,7 @@
 
 //! A Better Event Handling Class
 class EventList
-{	
+{
     typedef std::pair<cl_event, char*> event_tuple;
 
     typedef std::pair<double, char*> time_tuple;
@@ -74,6 +74,8 @@ public:
     ~EventList();
 
     void dumpCSV(char* path);
+
+    void dumpTraceCSV(char* path);
 
     void newCompileEvent(double time, char* desc);
 
@@ -92,7 +94,7 @@ public:
     void printKernelEvents();
 
     void printUserEvents();
-    
+
     void printAllExecTimes();
 
     void printCompileExecTimes();
@@ -103,7 +105,7 @@ public:
 
     void printUserExecTimes();
 
-private:	
+private:
 
     char* createFilenameWithTimestamp();
 
@@ -124,4 +126,4 @@ private:
     std::vector<time_tuple>::iterator user_events_iterator;
 };
 
-#endif 
+#endif

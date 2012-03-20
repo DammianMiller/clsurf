@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -55,24 +55,24 @@
 #include <vector>
 
 #include "cv.h"
-#include "cvutils.h" 
+#include "cvutils.h"
 #include "clutils.h"
 #include "fasthessian.h"
 #include "utils.h"
 
 // Based on the octave (row) and interval (column), this lookup table
 // identifies the appropriate determinant layer
-const int filter_map[OCTAVES][INTERVALS] = {{0, 1, 2, 3}, 
-                                            {1, 3, 4, 5}, 
-                                            {3, 5, 6, 7}, 
-                                            {5, 7, 8, 9}, 
+const int filter_map[OCTAVES][INTERVALS] = {{0, 1, 2, 3},
+                                            {1, 3, 4, 5},
+                                            {3, 5, 6, 7},
+                                            {5, 7, 8, 9},
                                             {7, 9,10,11}};
 
 //-------------------------------------------------------
 
-//! Constructor 
-FastHessian::FastHessian(int i_height, int i_width, const int octaves, 
-                         const int intervals, const int sample_step, 
+//! Constructor
+FastHessian::FastHessian(int i_height, int i_width, const int octaves,
+                         const int intervals, const int sample_step,
                          const float thres, cl_kernel* kernel_list)
                          :kernel_list(kernel_list)
 {
@@ -95,7 +95,7 @@ FastHessian::FastHessian(int i_height, int i_width, const int octaves,
 
 //! Destructor
 FastHessian::~FastHessian()
-{	
+{
     cl_freeMem(this->d_ipt_count);
 
     for(unsigned int i = 0; i < this->responseMap.size(); i++) {
@@ -103,7 +103,7 @@ FastHessian::~FastHessian()
     }
 }
 
-void FastHessian::createResponseMap(int octaves, int imgWidth, int imgHeight, int sample_step) 
+void FastHessian::createResponseMap(int octaves, int imgWidth, int imgHeight, int sample_step)
 {
 
     int w = (imgWidth / sample_step);
@@ -149,21 +149,21 @@ void FastHessian::createResponseMap(int octaves, int imgWidth, int imgHeight, in
 /*!
     \param d_intImage Integral Image
     \param surfipt Pointer to pre-allocated temp data structures
-    \param i_width Image Width 
+    \param i_width Image Width
     \param i_height Image Height
     \param octaves Octaves for SURF
     \param intervals Number of Intervals
     \param kernel_list pointer to precompiled kernels
 */
 void FastHessian::computeHessianDet(cl_mem d_intImage,
-                                    int i_width, int i_height, 
+                                    int i_width, int i_height,
                                     cl_kernel* kernel_list)
 {
     // set matrix size and x,y threads per block
     const int BLOCK_DIM = 16;
-	
+
     cl_kernel hessian_det =  kernel_list[KERNEL_BUILD_DET];
-   
+
     size_t localWorkSize[2] = {BLOCK_DIM,BLOCK_DIM};
     size_t globalWorkSize[2];
 
@@ -194,17 +194,17 @@ void FastHessian::computeHessianDet(cl_mem d_intImage,
             "BuildHessianDet", i);
 
         // TODO Verify that a clFinish is not required (setting an argument
-        //      to the loop counter without it may be problematic, but it 
+        //      to the loop counter without it may be problematic, but it
         //      really kills performance on AMD parts)
         //cl_sync();
     }
 }
 
 
-//! Find the image features and write into vector of features
 /*!
+    Find the image features and write into vector of features
     Determine what points are interesting and store them
-    \param img 
+    \param img
     \param d_intImage The integral image pointer on the device
     \param d_laplacian
     \param d_pixPos
@@ -219,7 +219,7 @@ int FastHessian::getIpoints(IplImage *img, cl_mem d_intImage, cl_mem d_laplacian
     this->computeHessianDet(d_intImage, img->width, img->height, kernel_list);
 
 	// Determine which points are interesting
-    // GPU kernels: non_max_suppression kernel 
+    // GPU kernels: non_max_suppression kernel
     this->selectIpoints(d_laplacian, d_pixPos, d_scale, kernel_list, maxIpts);
 
 	// Copy the number of interesting points back to the host
@@ -227,15 +227,16 @@ int FastHessian::getIpoints(IplImage *img, cl_mem d_intImage, cl_mem d_laplacian
 
 	// Sanity check
     if(this->num_ipts < 0) {
-        printf("Invalid number of Ipoints\n"); 
+        printf("Invalid number of Ipoints\n");
         exit(-1);
     };
 
     return num_ipts;
 }
 
-//! Calculate the position of ipoints (gpuIpoint::d_pixPos) using non maximal suppression
 /*!
+//! Calculate the position of ipoints (gpuIpoint::d_pixPos) using non maximal suppression
+
     Convert d_m_det which is a array of all the hessians into d_pixPos
     which is a float2 array of the (x,y) of all ipoint locations
     \param i_width The width of the image
@@ -245,14 +246,14 @@ int FastHessian::getIpoints(IplImage *img, cl_mem d_intImage, cl_mem d_laplacian
     \param d_scale
     \param kernel_list Precompiled Kernels
 */
-void FastHessian::selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos, 
+void FastHessian::selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos,
                                 cl_mem d_scale, cl_kernel* kernel_list,
                                 int maxPoints)
 {
 
     // The search for exterema (the most interesting point in a neighborhood)
     // is done by non-maximal suppression
-    
+
     cl_kernel non_max_supression = kernel_list[KERNEL_NON_MAX_SUP];
 
     int BLOCK_W=16;
@@ -288,7 +289,7 @@ void FastHessian::selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos,
             int tStep = this->responseMap.at(filter_map[o][i+2])->getStep();
 
             size_t localWorkSize[2] = {BLOCK_W, BLOCK_H};
-            size_t globalWorkSize[2] = {roundUp(mWidth, BLOCK_W), 
+            size_t globalWorkSize[2] = {roundUp(mWidth, BLOCK_W),
                                         roundUp(mHeight, BLOCK_H)};
 
             cl_setKernelArg(non_max_supression,  0, sizeof(cl_mem), (void*)&tResponse);
@@ -311,7 +312,7 @@ void FastHessian::selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos,
                 "NonMaxSupression", o*2+i);
 
             // TODO Verify that a clFinish is not required (setting an argument
-            //      to the loop counter without it may be problematic, but it 
+            //      to the loop counter without it may be problematic, but it
             //      really kills performance on AMD parts)
             //cl_sync();
         }
@@ -320,7 +321,7 @@ void FastHessian::selectIpoints(cl_mem d_laplacian, cl_mem d_pixPos,
 
 
 //! Reset the state of the data
-void FastHessian::reset() 
+void FastHessian::reset()
 {
     int numIpts = 0;
     cl_copyBufferToDevice(this->d_ipt_count, &numIpts, sizeof(int));

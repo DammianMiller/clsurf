@@ -19,9 +19,11 @@ NVIDIA_OPENCL_INSTALL_PATH := /usr/local/cuda
 OPENCV_INC := /usr/include/opencv
 OPENCV_LIB := /usr/lib64
 USE_OPENCV_VERSION := 2.1
+#USE_OPENCV_VERSION := 2.3
+#OPENCV_LIB := /usr/local/lib
+#OPENCV_INC := /usr/local/include/opencv
 
-
-OPENCV_LIB_NAMES    :=  -lopencv_imgproc -lopencv_core -lopencv_highgui -lopencv_video
+OPENCV_LIB_NAMES    :=  -lopencv_imgproc -lopencv_legacy -lopencv_highgui -lopencv_video -lopencv_core
 
 ifeq ($(USE_OPENCV_VERSION),2.1)
 OPENCV_LIB_NAMES    :=  -lcxcore -lcv -lcvaux -lhighgui -lml
@@ -35,9 +37,9 @@ AMD_OBJDIR     = obj/amd
 NVIDIA_OBJDIR  = obj/nvidia
 
 # Compilers
-CXX  = g++ -O3
-CC   = gcc -O3
-LINK = g++ -O3 
+CXX  = g++  -g
+CC   = gcc  -g
+LINK = g++  -g
 
 # Includes
 COMMON_INCLUDES += -I$(OPENCV_INC)  
