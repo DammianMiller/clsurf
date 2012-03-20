@@ -38,7 +38,7 @@ class KernelClass:
 dataReader = csv.reader(open('wozData.csv','rb'))
 """
 
-dataReader = csv.reader(open('testdata_cpu.txt','rb'))
+dataReader = csv.reader(open('testdata_nv.txt','rb'))
 header = dataReader.next()
 
 Category,KernelName,CallNo,Enqueue,Submit,Start,End = zip(*dataReader)
@@ -48,8 +48,10 @@ Submit = map(int,Submit)
 Start = map(int,Start)
 End = map(int,End)
 
+kernels = ["Scan","Transpose", "BuildHessianDet","NonMaxSupression","GetOrientations1","GetOrientations2","CreateDescriptors","NormalizeDescriptors"]
 
-kernels = ["copyBufferToDevice","copyImageToDevice","Scan","Transpose", "BuildHessianDet","NonMaxSupression","GetOrientations","GetOrientations2","CreateDescriptors","NormalizeDescriptors"]
+
+#kernels = ["copyBufferToDevice","copyImageToDevice","Scan","Transpose", #"BuildHessianDet","NonMaxSupression","GetOrientations","GetOrientations2","CreateDescriptors","NormalizeDescriptors"]
 colors = ['gray','red','blue','green','cyan','magenta','yellow','purple','orange','green','pink']
 
 kernelClasses = []
@@ -59,7 +61,7 @@ for k in kernels:
     kClass = KernelClass();
     kClass.name = k
     for idx,kname in enumerate(KernelName):
-        if kname.find(k) >= 0:
+        if kname.find(k) == 0:
             #if EventType[idx]=='ENQ':
             kClass.enqs.append(Enqueue[idx])
             #elif EventType[idx]=='SUBMIT':

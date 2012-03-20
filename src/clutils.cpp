@@ -101,6 +101,13 @@ void markphase(int phase_id)
 {
     events->markphase(phase_id);
 }
+
+void recordphase(int phase_id)
+{
+    events->recordphase(phase_id);
+}
+
+
 //-------------------------------------------------------
 //          Initialization and Cleanup
 //-------------------------------------------------------
@@ -213,10 +220,10 @@ cl_context cl_init(char devicePreference)
     // to decide at runtime
     cl_uint chosen_platform, chosen_device;
     // UNCOMMENT the following two lines to manually select device each time
-    //printf("Enter Platform and Device No (Seperated by Space) \n");
-    //scanf("%d %d", &chosen_platform, &chosen_device);
-    chosen_platform = 0;
-    chosen_device = 0;
+    printf("Enter Platform and Device No (Seperated by Space) \n");
+    scanf("%d %d", &chosen_platform, &chosen_device);
+    //chosen_platform = 0;
+    //chosen_device = 0;
     printf("Using Platform %d, Device %d \n", chosen_platform, chosen_device);
 
     // Do a sanity check of platform/device selection
@@ -1112,8 +1119,8 @@ void cl_printEvents() {
 //! Write out all current events to a file
 void cl_writeEventsToFile(char* path) {
 
-    //events->dumpCSV(path);
-    events->dumpTraceCSV_Phase(path);
+    events->dumpCSV(path);
+    //events->dumpTraceCSV_Phase(path);
     //events->dumpTraceCSV(path);
 
 }

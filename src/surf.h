@@ -1,4 +1,4 @@
- /****************************************************************************\ 
+ /****************************************************************************\
  * Copyright (c) 2011, Advanced Micro Devices, Inc.                           *
  * All rights reserved.                                                       *
  *                                                                            *
@@ -62,9 +62,9 @@
 #include "eventlist.h"
 
 // Uncomment the following define to use optimized data transfers
-// when possible.  Note that AMD's use of memory mapping is 
+// when possible.  Note that AMD's use of memory mapping is
 // different than NVIDIA, so it will crash on NVIDIA's devices
-#define OPTIMIZED_TRANSFERS
+//#define OPTIMIZED_TRANSFERS
 
 #define DESC_SIZE 64
 
@@ -84,16 +84,16 @@ typedef std::vector<Ipoint> IpVec;
 class Surf {
 
   public:
-    
-    Surf(int initialPoints, int i_height, int i_width,  int octaves, 
-           int intervals, int sample_step, float threshold, 
+
+    Surf(int initialPoints, int i_height, int i_width,  int octaves,
+           int intervals, int sample_step, float threshold,
            cl_kernel* kernel_list);
 
     ~Surf();
-    
+
     //! Compute the integral image
     void computeIntegralImage(IplImage* source);
-    
+
     //! Create the SURF descriptors
     void createDescriptors(int i_width, int i_height);
 
@@ -115,7 +115,7 @@ class Surf {
   private:
 
     // The actual number of ipoints for this image
-    int numIpts; 
+    int numIpts;
 
     //! The amount of ipoints we have allocated space for
     int maxIpts;
@@ -140,10 +140,10 @@ class Surf {
 
     //! Orientation of each Ipoint an array of float
     cl_mem d_orientation;
-    
+
     cl_mem d_gauss25;
-    
-    cl_mem d_id;	
+
+    cl_mem d_id;
 
     cl_mem d_i;
 
@@ -197,7 +197,7 @@ class Surf {
 #endif
 
     const static int j[16];
-    
+
     const static int i[16];
 
     const static unsigned int id[13];

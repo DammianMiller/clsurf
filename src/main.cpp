@@ -176,7 +176,8 @@ int main(int argc, char **argv)
 	// NVIDIA's OpenCL cuurently doesn't support single-channel images
 	if(cl_deviceIsNVIDIA())
 	{
-		setUsingImages(false);
+
+ 		setUsingImages(false);
 	}
 
     // Print a message saying whether or not images are being used
@@ -410,8 +411,19 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
     // Limit the loop to 1000 iterations
     int limit = 1000;
     int frame_id = 0;
+
     while(limit--)
     {
+
+#ifdef PER_FRAME_TIMING
+
+        cl_time t_start;
+        cl_time t_end;
+        cl_getTime(&t_start);
+
+#endif //PER_FRAME_TIMING
+
+        
         // Sanity check frame sizes
         if(frame->width != firstWidth || frame->height != firstHeight) {
             printf("Frames are inconsistent sizes, exiting loop\n");
@@ -457,8 +469,18 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
             printf("No Frames Available\n");
             break;
         }
+        if(frame_id % 4 == 0)
         markphase(frame_id);
+
+        recordphase(frame_id);
+
         frame_id=frame_id+1;
+
+#ifdef PER_FRAME_TIMING
+
+        cl_getTime(&t_end);
+        printf("Time per Frame %f \n",cl_computeTime(t_start,t_end));
+#endif  //PER_FRAME_TIMING
 
     }
 
@@ -657,6 +679,13 @@ int mainBenchmark(cl_kernel* kernel_list, char* inputImage, char* eventsPath,
 
     // Load the input image using OpenCV
     IplImage *img=cvLoadImage(inputImage);
+    if(img == NULL)
+    {
+        printf("Error loading image - Benchmark Mode \n");
+        printf("You may have loaded a video or the file is wrong\n");
+        exit(-1);
+    }
+
 
     // Initialize some SURF parameters
     int octaves = 5;

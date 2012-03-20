@@ -226,7 +226,7 @@ void EventList::markphase(int p)
 {
     phase_data t;
     t.phase_id = p;
-    t.phase_start =kernel_event_count - current_phase_delta;
+    t.phase_start = kernel_event_count - current_phase_delta;
     t.phase_delta = current_phase_delta;
     printf("Phase Added %d\t %d\t %d\n", t.phase_id, t.phase_start, t.phase_delta);
     phase_tags.push_back(t);
