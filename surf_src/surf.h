@@ -72,11 +72,11 @@
 
 #define DESC_SIZE 64
 
-#define _ENABLE_THROTTLE
+//#define _ENABLE_THROTTLE
 
-#define _IMAGE_COMPARE
+//#define _IMAGE_COMPARE
 
-#define _ORTN_CHECK
+//#define _ORTN_CHECK
 
 //#define _BUCKETIZE
 
@@ -105,6 +105,9 @@ class Surf {
 
 	int runcount ;
 	int skipcount;
+
+	int do_ortn ;
+ 	int skip_ortn ;
 
 #ifdef _IMAGE_COMPARE
 	//! Analysis devices interface

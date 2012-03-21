@@ -15,7 +15,7 @@
 #endif
 
 
-#pragma OPENCL EXTENSION cl_amd_printf : enable
+//#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 
 //		<-----xid-->
@@ -79,7 +79,7 @@ void compare_ortn_adk(
     if(get_local_id(0)  == 0)
     {
     	result[get_group_id(0)] = buff[0];
-    	//printf("Result is %f\n",buff[0]);
+    //	printf("Result is %f\n",buff[0]);
     }
  
     barrier(CLK_LOCAL_MEM_FENCE);

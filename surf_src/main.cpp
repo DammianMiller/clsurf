@@ -465,16 +465,18 @@ int mainVideo(cl_kernel* kernel_list, char* inputImage, char* eventsPath, char* 
         }
     }
     printf("Surf Ran %d \t Skipped %d\n",surf->runcount, surf->skipcount);
+    printf("Surf Ortn Ran %d \t Skipped %d\n",surf->do_ortn, surf->skip_ortn);
     // Write events to file if path was supplied
     if(eventsPath != NULL) {
         cl_writeEventsToFile(eventsPath);
     }
+    fflush(stdout);
     // Clean up 
     delete surf;
     cvReleaseCapture(&capture);
     cvDestroyAllWindows();
     cl_cleanup();
-    fflush(stdout);
+
     return 0;
 }
 

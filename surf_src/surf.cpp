@@ -167,17 +167,20 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	prev_img_gray = cvCreateImage(cvSize(i_width,i_height), IPL_DEPTH_32F, 1);
 	cvSet(prev_img_gray, cvScalar(0));
 
+	do_ortn = 0;
+	skip_ortn = 0;
 #ifdef _ORTN_CHECK
 
     odevice = new compare_ortn;
     //odevice->configure_analysis_subdevice_cpu();
     //odevice->configure_analysis_rootdevice();
-    odevice->configure_analysis_device_cpu(cl_getContext());
+	odevice->configure_analysis_device_cpu(cl_getContext());
 	odevice->init_app_profiler(cl_profiler_ptr());
 	odevice->build_analysis_kernel("analysis-CLSource/compare_ortn.cl","compare_ortn_adk",0);
 	odevice->set_ortn_compare_threshold();
 	odevice->init_buffers(1000*sizeof(float));
 	odevice->set_device_state(ENABLED);
+
 
 #endif
 
@@ -439,12 +442,13 @@ void Surf::createDescriptors(int i_width, int i_height)
 */
 void Surf::getOrientations(int i_width, int i_height)
 {
-//
 
     if(run_orientation_stage == ENABLED)
     {
+	
 #ifdef _ORTN_CHECK
-    	printf("DOING ORIENTATION\n");
+	do_ortn = do_ortn+1;
+    	//printf("DOING ORIENTATION\n");
 #endif
     	cl_kernel getOrientation = this->kernel_list[KERNEL_GET_ORIENT1];
 		cl_kernel getOrientation2 = this->kernel_list[KERNEL_GET_ORIENT2];
@@ -483,8 +487,9 @@ void Surf::getOrientations(int i_width, int i_height)
     else
     {
     	#ifdef _ORTN_CHECK
-    		printf("SKIPPING ORIENTATION\n");
-		#endif
+	skip_ortn = skip_ortn+1;
+    	//printf("SKIPPING ORIENTATION\n");
+	#endif
     }
 }
 

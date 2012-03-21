@@ -91,7 +91,7 @@ void compare_ortn::assign_buffers_mapping(cl_mem prev, cl_mem next, size_t mem_s
 		ad_errChk(status,"error copying buffer2",TRUE);
 
 	}
-	//clFinish(cl_getCommandQueue());
+	clFinish(cl_getCommandQueue());
 	//copyHostToAd(p_features,prev,mem_size);
 	//copyHostToAd(n_features,next,mem_size);
 
@@ -105,7 +105,7 @@ bool compare_ortn::get_analysis_result(bool run_orientation_stage_status_ip)
 	if(run_orientation_stage_status_ip == DISABLED)
 	{
 		foo = foo+1;
-		if(foo%5 == 0)
+		if(foo%25 == 0)
 		{
 			run_orientation_stage_status = ENABLED;
 			return run_orientation_stage_status;
@@ -117,7 +117,7 @@ bool compare_ortn::get_analysis_result(bool run_orientation_stage_status_ip)
 		}
 
 	}
-
+	
 
 	//! Read results from processing
 	//! Assume that the kernel injection is finished now
@@ -125,6 +125,8 @@ bool compare_ortn::get_analysis_result(bool run_orientation_stage_status_ip)
 	int mem_to_map = sizeof(float)*(kernel_vec.at(0)->globalws[0]/kernel_vec.at(0)->localws[0]);
  	float * data = (float *)mapBuffer(opbuff.buffer,mem_to_map,CL_MAP_READ);
  	sync();
+	clFinish(cl_getCommandQueue());
+
  	float diff_value = 0.0f;
 	//for(int i=0;i < (kernel_vec.at(0)->globalws[0]); i++)
 	for(int i=0;i < (kernel_vec.at(0)->globalws[0]/kernel_vec.at(0)->localws[0]) ; i++)
