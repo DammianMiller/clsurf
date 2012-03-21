@@ -191,7 +191,7 @@ Surf::Surf(int initialPoints, int i_height, int i_width, int octaves,
 	adevice->init_app_profiler(cl_profiler_ptr());
 	adevice->v_profiler->init(cl_getCommandQueue(),cl_getContext(),cl_getDevice());
 	adevice->build_analysis_kernel("analysis-CLSource/compare.cl","compare",0);
-	adevice->set_ortn_compare_threshold();
+	adevice->set_compare_threshold();
 	adevice->init_buffers(i_height*i_width*sizeof(float));
 	adevice->set_device_state(ENABLED);
 	adevice->set_feature_count_threshold(100,this->d_length);

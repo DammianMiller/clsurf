@@ -74,9 +74,9 @@
 
 #define _ENABLE_THROTTLE
 
-//#define _IMAGE_COMPARE
+#define _IMAGE_COMPARE
 
-//#define _ORTN_CHECK
+#define _ORTN_CHECK
 
 //#define _BUCKETIZE
 
