@@ -134,7 +134,7 @@ void drawFPS(IplImage *img)
 
     // Increment counter
     ++counter;
-
+    printf("FPS %f \n",fps);
     // Get the figure as a string
     sprintf(fps_text,"FPS: %.2f",fps);
 
